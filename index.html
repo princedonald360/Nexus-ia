@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#15324B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NEXUS AI">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>NEXUS AI</title>
+<style>
+:root{--bg:#F5F7FA;--fg:#17212B;--mut:#5b6b7a;--card:#fff;--bd:#dfe5ec;--pri:#15324B;--onpri:#fff;--acc:#087E8B;--ok:#1b7f4b;--warn:#9a5b00;--err:#b3261e;--chip:#e8eef4}
+[data-theme=dark]{--bg:#0d1823;--fg:#e8eef4;--mut:#9db0c1;--card:#152637;--bd:#25394d;--pri:#0a1a28;--onpri:#fff;--acc:#3cc4d0;--ok:#56c48a;--warn:#e0a449;--err:#ff8a80;--chip:#1d3246}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:820px;margin:0 auto;background:var(--bg)}
+header{background:var(--pri);color:var(--onpri);padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;display:flex;align-items:center;gap:8px;min-height:56px}
+header h1{font-size:18px;margin:0;flex:1;font-weight:650}
+header button{background:transparent;border:0;color:inherit;font-size:22px;min-width:44px;min-height:44px;border-radius:10px}
+#main{flex:1;overflow:auto;padding:12px;-webkit-overflow-scrolling:touch}
+#main.chatmode{padding:0;display:flex;flex-direction:column;overflow:hidden}
+nav{display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--mut);min-height:56px;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+nav button span{font-size:22px;line-height:1}
+nav button.on{color:var(--acc);font-weight:700}
+h2{font-size:17px;margin:18px 0 8px}h3{margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;margin-bottom:8px;min-height:48px}
+.grow{flex:1;min-width:0}.t{font-weight:600;overflow-wrap:anywhere}.sub{font-size:13px;color:var(--mut)}
+.mut{color:var(--mut);font-size:14px}.late{color:var(--err);font-weight:600}
+.btn{border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:12px;min-height:44px;padding:0 14px;font-size:15px;cursor:pointer}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.danger{background:var(--err);border-color:var(--err);color:#fff}
+.btn.ghost{background:transparent}.btn.sm{min-height:36px;font-size:13px;padding:0 10px}
+.btn[disabled]{opacity:.5}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row.end{justify-content:flex-end;margin-top:12px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px}
+.chip{border:0;background:var(--chip);color:var(--fg);border-radius:999px;min-height:36px;padding:0 14px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--acc);color:#fff;font-weight:600}
+input,textarea,select{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;min-height:44px}
+textarea{resize:vertical}
+.fld{display:block;margin-bottom:10px}.fld span{display:block;font-size:13px;color:var(--mut);margin-bottom:3px}
+.chk{width:30px;height:30px;min-width:30px;border-radius:50%;border:2px solid var(--acc);background:transparent;color:var(--acc);font-weight:800;padding:0}
+.task.done .t{text-decoration:line-through;color:var(--mut)}.task.done .chk{background:var(--acc);color:#fff}
+.pr{font-weight:600}.pr.haute{color:var(--err)}.pr.basse{color:var(--mut)}
+.badge{font-size:12px;border-radius:999px;padding:2px 9px;background:var(--chip);color:var(--fg);white-space:nowrap}
+.badge.ok{background:#1b7f4b22;color:var(--ok)}.badge.warn{background:#e0a44922;color:var(--warn)}.badge.err{background:#b3261e22;color:var(--err)}
+.empty{text-align:center;color:var(--mut);padding:28px 12px}.empty b{display:block;font-size:17px;color:var(--fg);margin-bottom:4px}
+.banner{background:#e0a44922;border:1px solid var(--warn);color:var(--fg);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:14px}
+.hello{font-size:22px;font-weight:700;margin:6px 0 2px}
+.ask{display:flex;gap:8px;margin:10px 0}.ask input{flex:1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 10px;text-align:center;min-height:84px;font-size:14px;color:var(--fg)}
+.tile span{display:block;font-size:26px}
+.chat{display:flex;flex-direction:column;height:100%;min-height:0}
+.chathead{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--bd);background:var(--card)}
+.chathead .t{flex:1;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msgs{flex:1;overflow:auto;padding:12px;min-height:0}
+.msg{max-width:92%;margin:0 0 10px;padding:10px 12px;border-radius:16px;overflow-wrap:anywhere}
+.msg.u{margin-left:auto;background:var(--acc);color:#fff;border-bottom-right-radius:4px;white-space:pre-wrap}
+.msg.a{background:var(--card);border:1px solid var(--bd);border-bottom-left-radius:4px}
+.msg.e{background:#b3261e1a;border:1px solid var(--err)}
+.msg p{margin:.35em 0}.msg ul,.msg ol{margin:.3em 0;padding-left:1.3em}.msg h3,.msg h4,.msg h5{margin:.7em 0 .3em}
+.msg pre{background:var(--chip);padding:8px;border-radius:8px;overflow:auto;font-size:13px}code{font-size:.92em}
+.tw{overflow:auto}table{border-collapse:collapse;font-size:14px}td,th{border:1px solid var(--bd);padding:4px 8px;text-align:left}
+.mtools{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.acard{border:1px dashed var(--acc);border-radius:12px;padding:8px 10px;margin-top:8px;font-size:14px}
+.src{font-size:13px;margin-top:6px}.src a{color:var(--acc)}
+.composer{display:flex;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom)*0);background:var(--card);border-top:1px solid var(--bd);align-items:flex-end}
+.composer textarea{min-height:44px;max-height:140px;flex:1}
+.typing{color:var(--mut);font-style:italic;padding:4px 2px}
+.overlay{position:fixed;inset:0;background:#0008;display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.sheet{background:var(--bg);width:100%;max-width:820px;max-height:88dvh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#17212B;color:#fff;padding:10px 16px;border-radius:12px;z-index:99;max-width:90%;display:none;font-size:14px;text-align:center}
+.lock{position:fixed;inset:0;background:var(--pri);color:#fff;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px}
+.lock input{max-width:240px;text-align:center;font-size:22px;letter-spacing:6px}
+.log{font-size:14px;border-left:3px solid var(--bd);padding-left:10px;margin:6px 0}
+.small{font-size:12px;color:var(--mut)}
+@media(min-width:700px){.grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><button id="backBtn" data-act="back" style="display:none" aria-label="Retour">‹</button><h1 id="title">NEXUS AI</h1><button data-act="nav" data-v="settings" aria-label="Paramètres">⚙</button></header>
+  <div id="main"></div>
+  <nav id="nav"></nav>
+</div>
+<div id="toast"></div>
+<input type="file" id="fileIn" multiple hidden accept=".pdf,.docx,.xlsx,.csv,.txt,.md,image/png,image/jpeg,image/webp,image/gif">
+<script>
+'use strict';
+/* ============ Utilitaires ============ */
+const $=(s,e=document)=>e.querySelector(s);
+const $$=(s,e=document)=>[...e.querySelectorAll(s)];
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,10));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nowISO=()=>new Date().toISOString();
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=(d=new Date())=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fmtDate=s=>{if(!s)return '';const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})};
+const fmtDT=s=>s?new Date(s).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+const fmtSize=n=>n<1024?n+' o':n<1048576?(n/1024).toFixed(0)+' Ko':(n/1048576).toFixed(1)+' Mo';
+const safeName=s=>String(s).replace(/[^\w\-. àâçéèêëîïôûùüÿ]/gi,'_').slice(0,80)||'document';
+let toastT;
+function toast(m,ms=3200){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',ms)}
+
+/* ============ Données ============ */
+const KEY='nexus_ai_v1';
+const defaults=()=>({settings:{provider:'gemini',models:{},keys:{},theme:'auto',useMemory:true,pinHash:null,pinSalt:null,name:'',dailyCap:200},usage:{date:'',count:0},conversations:[],messages:{},projects:[],tasks:[],memories:[],files:[],workflows:[],runs:[],audit:[]});
+function load(){try{const d=defaults(),j=JSON.parse(localStorage.getItem(KEY)||'{}');const s=Object.assign(d,j);s.settings=Object.assign(d.settings,j.settings||{});return s}catch(e){return defaults()}}
+let S=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Stockage plein : exportez vos données puis supprimez des éléments.')}}
+function audit(action,type,rid){S.audit.unshift({id:uid(),action,type,rid:rid||'',at:nowISO()});S.audit=S.audit.slice(0,200)}
+/* IndexedDB (fichiers) */
+let _db;
+const idb=()=>_db||(_db=new Promise((res,rej)=>{const r=indexedDB.open('nexus-ai',1);r.onupgradeneeded=()=>{r.result.createObjectStore('blobs');r.result.createObjectStore('texts')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}));
+async function idbOp(store,mode,fn){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction(store,mode);const rq=fn(tx.objectStore(store));tx.oncomplete=()=>res(rq&&rq.result);tx.onerror=()=>rej(tx.error)})}
+const idbSet=(s,k,v)=>idbOp(s,'readwrite',o=>o.put(v,k));
+const idbGet=(s,k)=>idbOp(s,'readonly',o=>o.get(k));
+const idbDel=(s,k)=>idbOp(s,'readwrite',o=>o.delete(k));
+
+/* ============ Thème ============ */
+function applyTheme(){const t=S.settings.theme;const dark=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',dark?'dark':'light');$('meta[name=theme-color]').content=dark?'#0a1a28':'#15324B'}
+
+/* ============ Markdown minimal ============ */
+function inl(s){return s.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/(^|[\s(])\*([^*\s][^*]*)\*/g,'$1<i>$2</i>').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')}
+function mdTable(rows){const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());const body=rows.filter(r=>!/^\s*\|[\s:|-]+\|\s*$/.test(r));if(!body.length)return '';const h=cells(body[0]);return '<div class="tw"><table><thead><tr>'+h.map(c=>'<th>'+inl(c)+'</th>').join('')+'</tr></thead><tbody>'+body.slice(1).map(r=>'<tr>'+cells(r).map(c=>'<td>'+inl(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}
+function md(src){
+  const codes=[];let t=esc(src||'').replace(/```[\w-]*\n?([\s\S]*?)```/g,(m,c)=>{codes.push(c);return '\u0000'+(codes.length-1)+'\u0000'});
+  let o='',list=null,tb=[];
+  const endList=()=>{if(list){o+='</'+list+'>';list=null}};
+  const endTb=()=>{if(tb.length){o+=mdTable(tb);tb=[]}};
+  for(const ln of t.split('\n')){
+    if(/^\s*\|.+\|\s*$/.test(ln)){endList();tb.push(ln);continue}
+    endTb();let m;
+    if(/^\u0000\d+\u0000$/.test(ln.trim())){endList();o+=ln.trim()}
+    else if(m=ln.match(/^(#{1,4})\s+(.*)$/)){endList();const n=Math.min(m[1].length+2,5);o+='<h'+n+'>'+inl(m[2])+'</h'+n+'>'}
+    else if(m=ln.match(/^\s*[-*•]\s+(.*)$/)){if(list!=='ul'){endList();o+='<ul>';list='ul'}o+='<li>'+inl(m[1])+'</li>'}
+    else if(m=ln.match(/^\s*\d+[.)]\s+(.*)$/)){if(list!=='ol'){endList();o+='<ol>';list='ol'}o+='<li>'+inl(m[1])+'</li>'}
+    else if(!ln.trim()){endList()}
+    else{endList();o+='<p>'+inl(ln)+'</p>'}
+  }
+  endList();endTb();
+  return o.replace(/\u0000(\d+)\u0000/g,(m,i)=>'<pre><code>'+codes[i]+'</code></pre>');
+}
+
+/* ============ Fenêtres (sheets) ============ */
+function sheet(html){const o=document.createElement('div');o.className='overlay';o.innerHTML='<div class="sheet" role="dialog">'+html+'</div>';document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)o.remove()});return o}
+function confirmDlg(msg,{ok='Confirmer',danger=false}={}){return new Promise(res=>{const o=sheet('<p>'+msg+'</p><div class="row end"><button class="btn ghost" data-no>Annuler</button><button class="btn '+(danger?'danger':'pri')+'" data-yes>'+ok+'</button></div>');o.addEventListener('click',e=>{if(e.target.closest('[data-yes]')){o.remove();res(true)}else if(e.target.closest('[data-no]')||e.target===o){o.remove();res(false)}})})}
+function fieldHTML(f){const v=f.value??'';let inp;
+  if(f.type==='textarea')inp='<textarea name="'+f.name+'" rows="'+(f.rows||4)+'" placeholder="'+esc(f.placeholder||'')+'" '+(f.required?'required':'')+'>'+esc(v)+'</textarea>';
+  else if(f.type==='select')inp='<select name="'+f.name+'">'+f.options.map(o=>{const [val,lab]=Array.isArray(o)?o:[o,o];return '<option value="'+esc(val)+'" '+(String(val)===String(v)?'selected':'')+'>'+esc(lab)+'</option>'}).join('')+'</select>';
+  else inp='<input name="'+f.name+'" type="'+(f.type||'text')+'" value="'+esc(v)+'" placeholder="'+esc(f.placeholder||'')+'" '+(f.required?'required':'')+' '+(f.attrs||'')+' autocomplete="off">';
+  return '<label class="fld"><span>'+esc(f.label)+'</span>'+inp+'</label>'}
+function formSheet({title,fields,submit='Enregistrer',onDelete,intro},cb){
+  const o=sheet('<h3>'+esc(title)+'</h3>'+(intro?'<p class="mut">'+intro+'</p>':'')+'<form>'+fields.map(fieldHTML).join('')+'<div class="row end"><button type="button" class="btn ghost" data-close>Annuler</button>'+(onDelete?'<button type="button" class="btn danger" data-del>Supprimer</button>':'')+'<button class="btn pri">'+esc(submit)+'</button></div></form>');
+  const f=$('form',o);
+  f.addEventListener('submit',async e=>{e.preventDefault();const v=Object.fromEntries(new FormData(f));const r=await cb(v);if(r!==false)o.remove()});
+  if(onDelete)$('[data-del]',o).onclick=async()=>{if(await confirmDlg('Supprimer définitivement cet élément ?',{danger:true,ok:'Supprimer'})){await onDelete();o.remove()}};
+  setTimeout(()=>{const i=$('input,textarea',o);i&&i.focus()},60);return o}
+function resultSheet(title,text,sources){
+  const src=sources&&sources.length?'<div class="src"><b>Sources</b><br>'+sources.map(s=>'<a href="'+esc(s.uri)+'" target="_blank" rel="noopener noreferrer">'+esc(s.title||s.uri)+'</a>').join('<br>')+'</div>':'';
+  const o=sheet('<h3>'+esc(title)+'</h3><div class="msg a" style="max-width:100%">'+md(text)+src+'</div><div class="row end"><button class="btn ghost" data-close>Fermer</button><button class="btn" data-copy>Copier</button><button class="btn pri" data-exp>Exporter</button></div>');
+  $('[data-copy]',o).onclick=()=>copyText(text);$('[data-exp]',o).onclick=()=>exportSheet(title,text);return o}
+async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Copié')}catch(e){toast('Copie impossible sur ce navigateur')}}
+
+/* ============ Export de documents ============ */
+const LIBS={pdfjs:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',pdfw:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js',mammoth:'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js',xlsx:'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',docx:'https://unpkg.com/docx@8.5.0/build/index.js'};
+const _ls={};
+function loadScript(u){return _ls[u]||(_ls[u]=new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>{delete _ls[u];rej(new Error('Impossible de charger un composant (connexion requise).'))};document.head.appendChild(s)}))}
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+async function toDocx(title,text){
+  await loadScript(LIBS.docx);const {Document,Packer,Paragraph,TextRun,HeadingLevel}=window.docx;
+  const runs=s=>s.split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(p=>(p.startsWith('**')&&p.endsWith('**')&&p.length>4)?new TextRun({text:p.slice(2,-2),bold:true}):new TextRun(p.replace(/`/g,'')));
+  const H=[null,HeadingLevel.HEADING_1,HeadingLevel.HEADING_2,HeadingLevel.HEADING_3];
+  const kids=[new Paragraph({heading:HeadingLevel.TITLE,children:[new TextRun(title)]})];
+  for(const ln of text.split('\n')){let m;
+    if(m=ln.match(/^(#{1,3})\s+(.*)$/))kids.push(new Paragraph({heading:H[m[1].length],children:runs(m[2])}));
+    else if(m=ln.match(/^\s*[-*•]\s+(.*)$/))kids.push(new Paragraph({bullet:{level:0},children:runs(m[1])}));
+    else if(/^\s*\|[\s:|-]+\|\s*$/.test(ln)){}
+    else if(/^\s*\|.+\|\s*$/.test(ln))kids.push(new Paragraph({children:[new TextRun(ln.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim()).join('  |  '))]}));
+    else if(!ln.trim())kids.push(new Paragraph(''));
+    else kids.push(new Paragraph({children:runs(ln)}));}
+  return Packer.toBlob(new Document({sections:[{children:kids}]}));
+}
+function printPDF(title,text){
+  const f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);
+  const d=f.contentWindow.document;d.open();d.write('<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font:12pt/1.5 Georgia,serif;margin:2cm;color:#000}h1,h2,h3,h4,h5{font-family:Arial,sans-serif;color:#15324B}table{border-collapse:collapse}td,th{border:1px solid #999;padding:4px 8px}pre{white-space:pre-wrap}</style></head><body><h1>'+esc(title)+'</h1>'+md(text)+'</body></html>');d.close();
+  setTimeout(()=>{f.contentWindow.focus();f.contentWindow.print();setTimeout(()=>f.remove(),60000)},350);
+}
+function exportSheet(title,text){
+  const o=sheet('<h3>Exporter</h3><label class="fld"><span>Nom du document</span><input id="exName" value="'+esc(title)+'"></label><div class="grid"><button class="btn" data-f="docx">Word (.docx)</button><button class="btn" data-f="pdf">PDF (via impression)</button><button class="btn" data-f="md">Markdown (.md)</button><button class="btn" data-f="txt">Texte (.txt)</button></div><p class="small">PDF : dans la fenêtre d\'impression, choisissez « Enregistrer au format PDF ». Les tableaux sont simplifiés dans le .docx.</p><div class="row end"><button class="btn ghost" data-close>Fermer</button></div>');
+  o.addEventListener('click',async e=>{const b=e.target.closest('[data-f]');if(!b)return;const name=safeName($('#exName',o).value||title);const f=b.dataset.f;
+    try{if(f==='docx'){toast('Génération du .docx…');download(await toDocx(name,text),name+'.docx')}
+      else if(f==='pdf')printPDF(name,text);
+      else if(f==='md')download(new Blob([text],{type:'text/markdown'}),name+'.md');
+      else download(new Blob([text],{type:'text/plain'}),name+'.txt');
+      audit('export_'+f,'document',name);save();if(f!=='pdf')toast('Fichier généré : vérifiez vos Téléchargements')}
+    catch(err){toast(err.message)}});
+}
+
+/* ============ Couche IA ============ */
+const PROVIDERS={
+  gemini:{name:'Google Gemini',model:'gemini-flash-latest',keyUrl:'https://aistudio.google.com/apikey',maxChars:150000,search:true,vision:true},
+  groq:{name:'Groq',model:'llama-3.3-70b-versatile',keyUrl:'https://console.groq.com/keys',maxChars:18000,search:false,vision:false},
+  openrouter:{name:'OpenRouter',model:'meta-llama/llama-3.3-70b-instruct:free',keyUrl:'https://openrouter.ai/keys',maxChars:40000,search:false,vision:false}
+};
+const prov=()=>PROVIDERS[S.settings.provider];
+const modelName=()=>S.settings.models[S.settings.provider]||prov().model;
+const apiKey=()=>S.settings.keys[S.settings.provider]||'';
+async function fetchT(url,opt,ms=70000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);
+  try{return await fetch(url,{...opt,signal:c.signal})}
+  catch(e){throw new Error(e.name==='AbortError'?'Le service IA n\'a pas répondu à temps. Réessayez.':'Connexion impossible. Les fonctions IA nécessitent Internet.')}
+  finally{clearTimeout(t)}}
+function apiError(status,j){const m=(j&&(j.error&&(j.error.message||j.error)||j.message))||'';
+  if(status===401||status===403)return 'Clé API refusée ('+status+'). Vérifiez-la dans Paramètres.';
+  if(status===429)return 'Quota gratuit atteint chez le fournisseur. Patientez quelques minutes ou changez de fournisseur/modèle dans Paramètres.';
+  if(status===404)return 'Modèle introuvable : modifiez le nom du modèle dans Paramètres.';
+  return 'Erreur du service IA ('+status+')'+(m?' : '+String(m).slice(0,200):'');}
+function useQuota(){const d=todayStr();if(S.usage.date!==d)S.usage={date:d,count:0};if(S.usage.count>=S.settings.dailyCap)throw new Error('Plafond quotidien de '+S.settings.dailyCap+' appels IA atteint (réglable dans Paramètres).');S.usage.count++;save()}
+async function ai({system,history,search=false,images=[]}){
+  if(!apiKey())throw new Error('IA non configurée : ajoutez une clé API gratuite dans Paramètres.');
+  if(search&&!prov().search)throw new Error('La recherche web nécessite le fournisseur Google Gemini (non configurée avec '+prov().name+').');
+  if(images.length&&!prov().vision)throw new Error('L\'analyse d\'images nécessite Google Gemini.');
+  useQuota();
+  const model=modelName();
+  if(S.settings.provider==='gemini'){
+    const contents=history.map((m,i)=>{const parts=[{text:m.content}];if(i===history.length-1&&m.role==='user')images.forEach(im=>parts.push({inlineData:{mimeType:im.mime,data:im.data}}));return {role:m.role==='assistant'?'model':'user',parts}});
+    const body={contents,systemInstruction:{parts:[{text:system}]}};
+    if(search)body.tools=[{google_search:{}}];
+    const r=await fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey()},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>null);
+    if(!r.ok)throw new Error(apiError(r.status,j));
+    const c=j&&j.candidates&&j.candidates[0];
+    const text=c&&c.content&&c.content.parts?c.content.parts.map(p=>p.text||'').join(''):'';
+    if(!text)throw new Error('Réponse vide ou bloquée par le fournisseur. Reformulez votre demande.');
+    const chunks=(c.groundingMetadata&&c.groundingMetadata.groundingChunks)||[];
+    const sources=chunks.filter(x=>x.web).map(x=>({title:x.web.title,uri:x.web.uri}));
+    return {text,sources};
+  }
+  const url=S.settings.provider==='groq'?'https://api.groq.com/openai/v1/chat/completions':'https://openrouter.ai/api/v1/chat/completions';
+  const r=await fetchT(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey()},body:JSON.stringify({model,messages:[{role:'system',content:system},...history]})});
+  const j=await r.json().catch(()=>null);
+  if(!r.ok)throw new Error(apiError(r.status,j));
+  const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
+  if(!text)throw new Error('Réponse vide du fournisseur.');
+  return {text,sources:[]};
+}
+function memoryContext(query){
+  if(!S.settings.useMemory)return '';
+  const act=S.memories.filter(m=>m.status!=='archivée');if(!act.length)return '';
+  const toks=(query||'').toLowerCase().split(/[^a-zà-ÿ0-9]+/).filter(w=>w.length>=4);
+  const scored=act.map(m=>{const h=(m.content+' '+m.category).toLowerCase();return {m,s:toks.reduce((a,w)=>a+(h.includes(w)?1:0),0)+(m.category==='préférence'?0.5:0)}}).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,8);
+  if(!scored.length)return '';
+  return '\nMémoire de l\'utilisateur (consentie ; peut être périmée, indique la date si tu t\'en sers pour un sujet évolutif) :\n'+scored.map(x=>'- ['+x.m.category+', '+x.m.created_at.slice(0,10)+'] '+x.m.content).join('\n');
+}
+function systemPrompt(extra){
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return 'Tu es NEXUS AI, assistant personnel de '+(S.settings.name||'l\'utilisateur')+'. Réponds en français, de façon claire et structurée (markdown simple : titres, listes, tableaux). N\'invente jamais de résultats, de sources ni d\'actions accomplies ; signale hypothèses et incertitudes. Pose une question de clarification si une information essentielle manque. Date et heure actuelles : '+new Date().toLocaleString('fr-FR')+' (fuseau '+tz+').\n'+
+  'Tu ne peux exécuter AUCUNE action externe (email, partage, paiement). Tu peux seulement PROPOSER des actions internes à l\'application, que l\'utilisateur confirmera. Pour en proposer une, ajoute à la fin de ta réponse une balise <action>{json}</action> (max 3). Types : '+
+  '{"type":"create_task","title":"...","due":"AAAA-MM-JJ ou null","priority":"haute|normale|basse","project":"nom ou null"} ; '+
+  '{"type":"create_project","name":"...","description":"..."} ; '+
+  '{"type":"save_memory","content":"...","category":"projet|objectif|décision|préférence|autre"} ; '+
+  '{"type":"create_workflow","name":"...","steps":[{"title":"...","prompt":"..."}]}. '+
+  'Si une date est ambiguë, demande-la avant de proposer la tâche. Tu n\'es pas un professionnel médical, juridique ou financier.'+(extra||'');
+}
+function parseActions(text){const acts=[];const clean=text.replace(/<action>([\s\S]*?)<\/action>/g,(m,j)=>{try{const a=JSON.parse(j.trim());if(a&&a.type)acts.push({...a,status:'pending'})}catch(e){}return ''}).trim();return {clean,acts:acts.slice(0,3)}}
+function extractJSON(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)return null;try{return JSON.parse(t.slice(a,b+1))}catch(e){return null}}
+
+/* ============ Actions proposées par l'IA ============ */
+function describeAction(a){
+  if(a.type==='create_task')return '📝 Créer la tâche « '+esc(a.title)+' »'+(a.due?' pour le '+esc(fmtDate(a.due)):'')+(a.priority?' · priorité '+esc(a.priority):'')+(a.project?' · projet '+esc(a.project):'');
+  if(a.type==='create_project')return '📁 Créer le projet « '+esc(a.name)+' »';
+  if(a.type==='save_memory')return '🧠 Enregistrer en mémoire ('+esc(a.category||'autre')+') : '+esc(a.content);
+  if(a.type==='create_workflow')return '⚙️ Créer le workflow brouillon « '+esc(a.name)+' » ('+((a.steps||[]).length)+' étapes)';
+  return 'Action inconnue : '+esc(a.type);
+}
+function execAction(a){
+  if(a.type==='create_task'){if(!a.title)throw new Error('Titre manquant');const p=a.project?S.projects.find(x=>x.name.toLowerCase()===String(a.project).toLowerCase()):null;
+    const t={id:uid(),title:String(a.title).slice(0,200),due:/^\d{4}-\d{2}-\d{2}$/.test(a.due||'')?a.due:'',priority:['haute','normale','basse'].includes(a.priority)?a.priority:'normale',status:'à faire',projectId:p?p.id:null,notes:'',created_at:nowISO()};S.tasks.unshift(t);audit('create','task',t.id);return 'Tâche créée'+(a.project&&!p?' (projet « '+a.project+' » introuvable : non rattachée)':'')}
+  if(a.type==='create_project'){if(!a.name)throw new Error('Nom manquant');const p={id:uid(),name:String(a.name).slice(0,100),description:a.description||'',status:'actif',created_at:nowISO()};S.projects.unshift(p);audit('create','project',p.id);return 'Projet créé'}
+  if(a.type==='save_memory'){if(!a.content)throw new Error('Contenu manquant');const m={id:uid(),category:['projet','objectif','décision','préférence','autre'].includes(a.category)?a.category:'autre',content:String(a.content).slice(0,1000),source:'assistant (confirmé)',projectId:null,status:'active',created_at:nowISO(),updated_at:nowISO()};S.memories.unshift(m);audit('create','memory',m.id);return 'Mémoire enregistrée'}
+  if(a.type==='create_workflow'){const steps=(a.steps||[]).filter(s=>s&&s.prompt).map(s=>({type:'ai',title:String(s.title||'Étape').slice(0,80),prompt:String(s.prompt)}));if(!a.name||!steps.length)throw new Error('Workflow incomplet');const w={id:uid(),name:String(a.name).slice(0,100),steps,status:'brouillon',version:1,created_at:nowISO()};S.workflows.unshift(w);audit('create','workflow',w.id);return 'Workflow brouillon créé'}
+  throw new Error('Type d\'action non pris en charge');
+}
+
+/* ============ Fichiers ============ */
+const ALLOWED=['pdf','docx','xlsx','csv','txt','md','png','jpg','jpeg','webp','gif'];
+const IMG=['png','jpg','jpeg','webp','gif'];
+const MAXMB=10;
+const extOf=n=>(n.split('.').pop()||'').toLowerCase();
+async function extractText(file,ext){
+  if(['txt','md','csv'].includes(ext))return file.text();
+  if(ext==='pdf'){await loadScript(LIBS.pdfjs);
+    try{const wb=new Blob(['importScripts("'+LIBS.pdfw+'")'],{type:'application/javascript'});pdfjsLib.GlobalWorkerOptions.workerPort=new Worker(URL.createObjectURL(wb))}catch(e){pdfjsLib.GlobalWorkerOptions.workerSrc=LIBS.pdfw}
+    const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let out='';
+    for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const c=await pg.getTextContent();out+='\n[Page '+i+']\n'+c.items.map(x=>x.str).join(' ')}return out}
+  if(ext==='docx'){await loadScript(LIBS.mammoth);return (await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()})).value}
+  if(ext==='xlsx'){await loadScript(LIBS.xlsx);const wb=XLSX.read(await file.arrayBuffer());return wb.SheetNames.map(n=>'[Feuille : '+n+']\n'+XLSX.utils.sheet_to_csv(wb.Sheets[n])).join('\n\n')}
+  return '';
+}
+async function importFile(file,projectId){
+  const ext=extOf(file.name);
+  if(!ALLOWED.includes(ext))throw new Error('Type non autorisé : .'+ext+' (autorisés : '+ALLOWED.join(', ')+')');
+  if(file.size>MAXMB*1048576)throw new Error('Fichier trop volumineux (max '+MAXMB+' Mo) : '+file.name);
+  if(file.size===0)throw new Error('Fichier vide : '+file.name);
+  const id=uid();let status='ok',note='',text='';
+  if(IMG.includes(ext)){status='image';note='Image : analyse possible avec Google Gemini uniquement.'}
+  else{try{text=(await extractText(file,ext)).slice(0,400000);
+      if(!text.replace(/\[Page \d+\]|\s/g,'').length){status='ocr';note='Aucun texte extractible : probablement un document scanné. OCR non configuré.'}}
+    catch(e){status='erreur';note='Extraction impossible : '+e.message}}
+  await idbSet('blobs',id,file);if(text)await idbSet('texts',id,text);
+  S.files.unshift({id,name:file.name,ext,mime:file.type||'',size:file.size,projectId:projectId||null,status,note,chars:text.length,created_at:nowISO()});
+  audit('import','file',id);save();return status;
+}
+async function importFiles(list,projectId){
+  for(const f of list){try{toast('Import de '+f.name+'…',8000);const st=await importFile(f,projectId);toast(st==='ok'||st==='image'?'Importé : '+f.name:(S.files[0].note),5000)}catch(e){toast(e.message,5000)}}
+  render();
+}
+async function fileText(f){const t=await idbGet('texts',f.id)||'';const cap=prov().maxChars;return {text:t.slice(0,cap),cut:t.length>cap}}
+async function fileImage(f){const b=await idbGet('blobs',f.id);const data=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(b)});return {mime:f.mime||'image/'+f.ext,data}}
+async function analyzeFile(f,objective){
+  let history,images=[],cut=false;
+  if(f.status==='image'){images=[await fileImage(f)];history=[{role:'user',content:'Objectif : '+objective+'\nAnalyse l\'image jointe.'}]}
+  else{if(f.status==='ocr'||f.status==='erreur')throw new Error(f.note);const t=await fileText(f);cut=t.cut;history=[{role:'user',content:'Objectif : '+objective+'\n\nDocument « '+f.name+' » :\n'+t.text}]}
+  const r=await ai({system:systemPrompt('\nTu analyses un document fourni. Appuie-toi uniquement sur son contenu, cite les pages ([Page n]) ou feuilles quand elles existent, et dis clairement ce qui n\'y figure pas.'),history,images});
+  return {text:r.text+(cut?'\n\n*Note : document tronqué à '+prov().maxChars+' caractères pour ce fournisseur.*':''),sources:[]};
+}
+
+/* ============ Workflows ============ */
+function wfPerms(w){const p=new Set();w.steps.forEach(s=>{p.add(s.type==='task'?'Créer des tâches dans l\'app':'Envoyer du texte au fournisseur IA ('+prov().name+')')});return [...p]}
+async function runWorkflow(wf,run){
+  run.status='en cours';run.started_at=nowISO();run.log=[];audit('run','workflow',wf.id);save();render();
+  let prev='';
+  for(let i=0;i<wf.steps.length;i++){
+    if(run.cancel){run.status='annulé';break}
+    const st=wf.steps[i];const lg={i,title:st.title,status:'en cours',at:nowISO()};run.log.push(lg);save();render();
+    try{
+      if(st.type==='task'){const t={id:uid(),title:String(st.taskTitle||st.title).replace(/\{\{prev\}\}/g,prev.slice(0,150)),due:'',priority:'normale',status:'à faire',projectId:null,notes:'Créée par workflow « '+wf.name+' »',created_at:nowISO()};S.tasks.unshift(t);prev='Tâche créée : '+t.title}
+      else{const p=String(st.prompt).split('{{prev}}').join(prev);const r=await ai({system:systemPrompt('\nTu exécutes une étape d\'automatisation : produis directement le résultat demandé, sans balise action.'),history:[{role:'user',content:p}]});prev=r.text.replace(/<action>[\s\S]*?<\/action>/g,'').trim()}
+      lg.status='terminé';lg.out=prev.slice(0,3000);lg.end=nowISO();
+    }catch(e){lg.status='échoué';lg.err=e.message;run.status='échoué';run.error=e.message;break}
+    save();render();
+  }
+  if(run.status==='en cours'){run.status='terminé';run.result=prev}
+  run.finished_at=nowISO();save();render();
+}
+
+/* ============ État de vue ============ */
+let route={v:'home',p:null},cur=null,busy=false,chatErr=null,pending=[],webOn=false,tf='today',memCat='toutes',memQ='',fileQ='';
+const TITLES={home:'NEXUS AI',chat:'Assistant',projects:'Projets',project:'Projet',tasks:'Tâches',more:'Plus',files:'Fichiers',auto:'Automatisations',workflow:'Automatisation',memory:'Mémoire',integrations:'Intégrations',settings:'Paramètres'};
+const PARENT={project:'projects',workflow:'auto',files:'more',auto:'more',memory:'more',integrations:'more',settings:'more'};
+const NAVOF=v=>({home:'home',chat:'chat',projects:'projects',project:'projects',tasks:'tasks'}[v]||'more');
+function go(v,p=null){route={v,p};render()}
+function conv(){return S.conversations.find(c=>c.id===cur)}
+const proj=id=>S.projects.find(p=>p.id===id);
+function aiReady(){return !!apiKey()}
+
+/* ============ Vues ============ */
+const V={};
+V.home=()=>{
+  const h=new Date().getHours();const hello=(h<5||h>=18?'Bonsoir':'Bonjour')+(S.settings.name?' '+esc(S.settings.name):'');
+  const today=S.tasks.filter(t=>t.status!=='terminée'&&t.due&&t.due<=todayStr()).slice(0,5);
+  return (aiReady()?'':'<div class="banner">⚠️ IA non configurée. Ajoutez une clé gratuite dans <a href="#" data-act="nav" data-v="settings">Paramètres</a> pour discuter avec l\'assistant.</div>')+
+  '<div class="hello">'+hello+' 👋</div><div class="mut">Que souhaitez-vous faire ?</div>'+
+  '<form class="ask" data-form="homeAsk"><input name="q" placeholder="Écrivez votre demande…" autocomplete="off"><button class="btn pri">Envoyer</button></form>'+
+  '<div class="grid"><button class="tile" data-act="nav" data-v="tasks"><span>✅</span>Tâches</button><button class="tile" data-act="nav" data-v="files"><span>📄</span>Fichiers</button><button class="tile" data-act="nav" data-v="memory"><span>🧠</span>Mémoire</button><button class="tile" data-act="nav" data-v="auto"><span>⚙️</span>Automatisations</button><button class="tile" data-act="nav" data-v="projects"><span>📁</span>Projets</button><button class="tile" data-act="nav" data-v="integrations"><span>🔌</span>Intégrations</button></div>'+
+  '<h2>Tâches du jour et en retard</h2>'+(today.length?today.map(taskItem).join(''):'<div class="empty"><b>Rien d\'urgent</b>Aucune tâche pour aujourd\'hui.</div>')+
+  '<h2>Projets récents</h2>'+(S.projects.length?S.projects.slice(0,3).map(projItem).join(''):'<div class="empty">Aucun projet pour le moment.</div>');
+};
+function taskItem(t){const p=proj(t.projectId);const done=t.status==='terminée';
+  return '<div class="item task '+(done?'done':'')+'"><button class="chk" data-act="toggleTask" data-id="'+t.id+'" aria-label="Terminer">'+(done?'✓':'')+'</button><div class="grow" data-act="editTask" data-id="'+t.id+'"><div class="t">'+esc(t.title)+'</div><div class="sub">'+(t.due?'<span class="'+(t.due<todayStr()&&!done?'late':'')+'">'+esc(fmtDate(t.due))+'</span>':'Sans date')+' · <span class="pr '+esc(t.priority)+'">'+esc(t.priority)+'</span>'+(p?' · '+esc(p.name):'')+'</div></div></div>'}
+function projItem(p){const n=S.tasks.filter(t=>t.projectId===p.id&&t.status!=='terminée').length;return '<div class="item" data-act="openProject" data-id="'+p.id+'"><span style="font-size:22px">📁</span><div class="grow"><div class="t">'+esc(p.name)+'</div><div class="sub">'+n+' tâche(s) ouverte(s)'+(p.status==='archivé'?' · archivé':'')+'</div></div>›</div>'}
+
+V.chat=()=>{
+  const c=conv();const p=c&&proj(c.projectId);
+  return '<div class="chat"><div class="chathead"><button class="btn ghost sm" data-act="convList" aria-label="Conversations">☰</button><div class="t" data-act="renameConv">'+esc(c?c.title:'Nouvelle conversation')+(p?' · 📁 '+esc(p.name):'')+'</div><button class="btn ghost sm" data-act="newConv" aria-label="Nouvelle conversation">＋</button></div><div class="msgs" id="msgs"></div>'+
+  '<div class="chips" style="padding:6px 10px 0"><button class="chip '+(webOn?'on':'')+'" data-act="toggleWeb">🌐 Recherche web</button><button class="chip '+(S.settings.useMemory?'on':'')+'" data-act="toggleMem">🧠 Mémoire</button><button class="chip" data-act="attach">📎 Joindre</button></div><div id="pend" style="padding:0 10px"></div>'+
+  '<form class="composer" data-form="chatSend"><textarea name="q" id="q" rows="1" placeholder="Votre message…"></textarea><button class="btn pri" id="sendBtn" style="min-width:56px">➤</button></form></div>';
+};
+function renderPend(){const e=$('#pend');if(!e)return;e.innerHTML=pending.map(id=>{const f=S.files.find(x=>x.id===id);return f?'<span class="badge">📎 '+esc(f.name)+' <a href="#" data-act="unattach" data-id="'+id+'">✕</a></span> ':''}).join('')}
+function msgHTML(m,c){
+  if(m.role==='user')return '<div class="msg u">'+esc(m.content)+(m.attach&&m.attach.length?'<div class="small" style="color:#fff9">📎 '+m.attach.map(id=>esc((S.files.find(f=>f.id===id)||{name:'(fichier supprimé)'}).name)).join(', ')+'</div>':'')+'</div>';
+  const src=m.sources&&m.sources.length?'<div class="src"><b>Sources</b><br>'+[...new Map(m.sources.map(s=>[s.uri,s])).values()].map(s=>'<a href="'+esc(s.uri)+'" target="_blank" rel="noopener noreferrer">'+esc(s.title||s.uri)+'</a>').join('<br>')+'</div>':'';
+  const acts=(m.actions||[]).map((a,i)=>'<div class="acard">'+describeAction(a)+(a.status==='pending'?'<div class="row end"><button class="btn sm ghost" data-act="actNo" data-m="'+m.id+'" data-i="'+i+'">Ignorer</button><button class="btn sm pri" data-act="actYes" data-m="'+m.id+'" data-i="'+i+'">Confirmer</button></div>':'<div class="small">'+(a.status==='done'?'✓ '+esc(a.result||'Fait'):a.status==='failed'?'✗ '+esc(a.result):'Ignorée')+'</div>')+'</div>').join('');
+  return '<div class="msg a">'+md(m.content)+src+acts+'<div class="mtools"><button class="btn sm ghost" data-act="copyMsg" data-m="'+m.id+'">Copier</button><button class="btn sm ghost" data-act="exportMsg" data-m="'+m.id+'">Exporter</button><button class="btn sm ghost" data-act="remMsg" data-m="'+m.id+'">🧠 Mémoriser</button></div></div>';
+}
+function renderChatBody(){
+  const el=$('#msgs');if(!el)return;const c=conv();const ms=c?S.messages[c.id]||[]:[];
+  let h=ms.length?ms.map(m=>msgHTML(m,c)).join(''):'<div class="empty"><b>Comment puis-je vous aider ?</b>Posez une question, rédigez un document, planifiez vos tâches…<div class="chips" style="justify-content:center;flex-wrap:wrap;margin-top:12px">'+['Aide-moi à planifier ma semaine','Rédige un courrier de motivation','Explique-moi un concept simplement'].map(s=>'<button class="chip" data-act="suggest" data-q="'+esc(s)+'">'+esc(s)+'</button>').join('')+'</div></div>';
+  if(busy)h+='<div class="typing">NEXUS réfléchit…</div>';
+  if(chatErr)h+='<div class="msg e">⚠️ '+esc(chatErr)+'<div class="mtools"><button class="btn sm" data-act="retry">Réessayer</button></div></div>';
+  el.innerHTML=h;el.scrollTop=el.scrollHeight;const b=$('#sendBtn');if(b)b.disabled=busy;renderPend();
+}
+async function sendChat(text,retry){
+  if(busy)return;text=(text||'').trim();if(!retry&&!text&&!pending.length)return;
+  let c=conv();
+  if(!c){c={id:uid(),title:'Nouvelle conversation',projectId:null,created_at:nowISO(),updated_at:nowISO()};S.conversations.unshift(c);S.messages[c.id]=[];cur=c.id}
+  const ms=S.messages[c.id];
+  if(!retry){ms.push({id:uid(),role:'user',content:text||'(pièce jointe)',attach:[...pending],at:nowISO()});if(c.title==='Nouvelle conversation')c.title=(text||'Document').slice(0,42)}
+  const attach=retry?(ms[ms.length-1].attach||[]):[...pending];pending=[];c.updated_at=nowISO();busy=true;chatErr=null;save();if(route.v==='chat'){renderChatBody()}
+  try{
+    const last=ms[ms.length-1];let extra='';const p=proj(c.projectId);
+    if(p){extra+='\nProjet en cours : '+p.name+(p.description?' — '+p.description:'');const pm=S.memories.filter(m=>m.projectId===p.id).slice(0,6);if(pm.length)extra+='\nMémoires du projet :\n'+pm.map(m=>'- '+m.content).join('\n')}
+    extra+=memoryContext(last.content);
+    let body=last.content,images=[];
+    for(const id of attach){const f=S.files.find(x=>x.id===id);if(!f)continue;if(f.status==='image')images.push(await fileImage(f));else if(f.status==='ok'){const t=await fileText(f);body+='\n\n[Pièce jointe « '+f.name+' »'+(t.cut?' (tronquée)':'')+']\n'+t.text}else body+='\n\n[Pièce jointe « '+f.name+' » illisible : '+f.note+']'}
+    let hist=ms.slice(-16,-1).map(m=>({role:m.role,content:String(m.content).slice(0,6000)}));hist.push({role:'user',content:body});
+    while(hist.length&&hist[0].role!=='user')hist.shift();
+    const r=await ai({system:systemPrompt(extra),history:hist,search:webOn,images});
+    const pa=parseActions(r.text);
+    ms.push({id:uid(),role:'assistant',content:pa.clean||'(réponse vide)',actions:pa.acts,sources:r.sources,at:nowISO()});
+  }catch(e){chatErr=e.message}
+  busy=false;c.updated_at=nowISO();save();if(route.v==='chat')renderChatBody();
+}
+
+V.projects=()=>'<div class="row" style="margin-bottom:10px"><button class="btn pri" data-act="newProject">＋ Nouveau projet</button></div>'+(S.projects.length?S.projects.map(projItem).join(''):'<div class="empty"><b>Aucun projet</b>Créez un projet pour regrouper tâches, fichiers et mémoires.</div>');
+V.project=id=>{const p=proj(id);if(!p)return '<div class="empty">Projet introuvable.</div>';
+  const ts=S.tasks.filter(t=>t.projectId===id),fs=S.files.filter(f=>f.projectId===id),ms=S.memories.filter(m=>m.projectId===id);
+  return '<div class="card"><div class="t">'+esc(p.name)+' <span class="badge">'+esc(p.status)+'</span></div><div class="mut">'+esc(p.description||'Pas de description')+'</div><div class="row" style="margin-top:10px"><button class="btn sm" data-act="editProject" data-id="'+id+'">Modifier</button><button class="btn sm pri" data-act="chatProject" data-id="'+id+'">💬 Discuter</button></div></div>'+
+  '<h2>Tâches</h2><div class="row" style="margin-bottom:8px"><button class="btn sm" data-act="newTask" data-p="'+id+'">＋ Tâche</button></div>'+(ts.length?ts.map(taskItem).join(''):'<div class="empty">Aucune tâche.</div>')+
+  '<h2>Fichiers</h2><div class="row" style="margin-bottom:8px"><button class="btn sm" data-act="importBtn" data-p="'+id+'">＋ Importer</button></div>'+(fs.length?fs.map(fileItem).join(''):'<div class="empty">Aucun fichier.</div>')+
+  '<h2>Mémoires</h2><div class="row" style="margin-bottom:8px"><button class="btn sm" data-act="newMem" data-p="'+id+'">＋ Mémoire</button></div>'+(ms.length?ms.map(memItem).join(''):'<div class="empty">Aucune mémoire.</div>')};
+
+V.tasks=()=>{
+  const t0=todayStr();const open=S.tasks.filter(t=>t.status!=='terminée');
+  const F={today:open.filter(t=>t.due===t0),soon:open.filter(t=>!t.due||t.due>t0),late:open.filter(t=>t.due&&t.due<t0),done:S.tasks.filter(t=>t.status==='terminée'),all:S.tasks};
+  const L=[['today','Aujourd\'hui'],['soon','À venir'],['late','En retard'],['done','Terminées'],['all','Toutes']];
+  return '<form class="ask" data-form="quickTask"><input name="title" placeholder="Nouvelle tâche…" autocomplete="off" required><button class="btn pri">＋</button></form>'+
+  '<div class="chips">'+L.map(([k,n])=>'<button class="chip '+(tf===k?'on':'')+'" data-act="tf" data-f="'+k+'">'+n+' ('+F[k].length+')</button>').join('')+'</div>'+
+  (F[tf].length?F[tf].sort((a,b)=>(a.due||'9')>(b.due||'9')?1:-1).map(taskItem).join(''):'<div class="empty"><b>Rien ici</b>Ajoutez une tâche ci-dessus ou demandez à l\'assistant.</div>');
+};
+function fileItem(f){const ic=f.status==='image'?'🖼':f.ext==='pdf'?'📕':f.ext==='xlsx'||f.ext==='csv'?'📊':'📄';const p=proj(f.projectId);
+  return '<div class="item" data-act="fileMenu" data-id="'+f.id+'"><span style="font-size:24px">'+ic+'</span><div class="grow"><div class="t">'+esc(f.name)+'</div><div class="sub">'+fmtSize(f.size)+' · '+esc(fmtDT(f.created_at))+(p?' · '+esc(p.name):'')+'</div>'+(f.status==='ocr'||f.status==='erreur'?'<div class="sub late">'+esc(f.note)+'</div>':'')+'</div>⋯</div>'}
+V.files=()=>'<div class="row" style="margin-bottom:10px"><button class="btn pri" data-act="importBtn">＋ Importer</button></div><input id="fileQ" placeholder="Rechercher un fichier…" value="'+esc(fileQ)+'" style="margin-bottom:10px"><div id="fileList">'+fileListHTML()+'</div><p class="small">Formats : PDF, DOCX, XLSX, CSV, TXT, MD et images (max '+MAXMB+' Mo). Les fichiers restent sur votre téléphone ; leur texte n\'est envoyé au fournisseur IA que lorsque vous demandez une analyse.</p>';
+function fileListHTML(){const l=S.files.filter(f=>f.name.toLowerCase().includes(fileQ.toLowerCase()));return l.length?l.map(fileItem).join(''):'<div class="empty"><b>Aucun fichier</b>Importez un document pour le résumer ou l\'analyser.</div>'}
+
+function memItem(m){return '<div class="item" data-act="editMem" data-id="'+m.id+'"><div class="grow"><div class="t">'+esc(m.content)+'</div><div class="sub"><span class="badge">'+esc(m.category)+'</span> '+esc(m.created_at.slice(0,10))+' · '+esc(m.source)+'</div></div></div>'}
+const CATS=['projet','objectif','décision','préférence','autre'];
+V.memory=()=>'<div class="banner" style="background:#087E8B22;border-color:var(--acc)">Seul ce que vous enregistrez ici (ou confirmez dans le chat) est mémorisé. Rien n\'est retenu automatiquement.</div><div class="row" style="margin-bottom:8px"><button class="btn pri" data-act="newMem">＋ Mémoire</button><button class="btn" data-act="exportMem">Exporter</button></div><input id="memQ" placeholder="Rechercher…" value="'+esc(memQ)+'" style="margin-bottom:8px"><div class="chips">'+['toutes',...CATS].map(c=>'<button class="chip '+(memCat===c?'on':'')+'" data-act="memCat" data-c="'+c+'">'+c+'</button>').join('')+'</div><div id="memList">'+memListHTML()+'</div>';
+function memListHTML(){const l=S.memories.filter(m=>(memCat==='toutes'||m.category===memCat)&&m.content.toLowerCase().includes(memQ.toLowerCase()));return l.length?l.map(memItem).join(''):'<div class="empty"><b>Aucune mémoire</b>Ajoutez vos objectifs, décisions et préférences.</div>'}
+
+const WSTAT={'brouillon':'','terminé':'ok','en cours':'warn','en attente de validation':'warn','échoué':'err','annulé':''};
+V.auto=()=>'<div class="row" style="margin-bottom:10px"><button class="btn pri" data-act="newWfAI">✨ Créer depuis une demande</button><button class="btn" data-act="newWfManual">＋ Manuel</button></div><p class="small">Étapes séquentielles uniquement. Rien ne s\'exécute sans votre validation, et aucune exécution différée ou récurrente n\'est disponible dans cette version.</p>'+(S.workflows.length?S.workflows.map(w=>{const lr=S.runs.filter(r=>r.wfId===w.id).sort((a,b)=>a.created_at<b.created_at?1:-1)[0];return '<div class="item" data-act="openWf" data-id="'+w.id+'"><span style="font-size:22px">⚙️</span><div class="grow"><div class="t">'+esc(w.name)+'</div><div class="sub">'+w.steps.length+' étape(s)</div></div><span class="badge '+(lr?WSTAT[lr.status]:'')+'">'+(lr?esc(lr.status):'brouillon')+'</span></div>'}).join(''):'<div class="empty"><b>Aucune automatisation</b>Décrivez un enchaînement d\'étapes et NEXUS le propose en brouillon.</div>');
+V.workflow=id=>{const w=S.workflows.find(x=>x.id===id);if(!w)return '<div class="empty">Introuvable.</div>';
+  const runs=S.runs.filter(r=>r.wfId===id).sort((a,b)=>a.created_at<b.created_at?1:-1);const running=runs.find(r=>r.status==='en cours');
+  return '<div class="card"><div class="t">'+esc(w.name)+'</div><div class="sub">Permissions : '+wfPerms(w).map(esc).join(' · ')+'</div><div class="row" style="margin-top:10px"><button class="btn pri" data-act="runWf" data-id="'+id+'" '+(running?'disabled':'')+'>▶ Lancer</button><button class="btn" data-act="addStep" data-id="'+id+'">＋ Étape</button><button class="btn danger" data-act="delWf" data-id="'+id+'">Supprimer</button></div></div>'+
+  '<h2>Étapes</h2>'+w.steps.map((s,i)=>'<div class="item"><span class="badge">'+(i+1)+'</span><div class="grow"><div class="t">'+esc(s.title)+'</div><div class="sub">'+(s.type==='task'?'Créer une tâche : '+esc(s.taskTitle||s.title):esc(String(s.prompt).slice(0,140)))+'</div></div><button class="btn sm ghost" data-act="delStep" data-id="'+id+'" data-i="'+i+'">✕</button></div>').join('')+
+  '<h2>Historique</h2>'+(runs.length?runs.map(r=>'<div class="card"><div class="row"><span class="badge '+WSTAT[r.status]+'">'+esc(r.status)+'</span><span class="small">'+esc(fmtDT(r.created_at))+'</span>'+(r.status==='en cours'?'<button class="btn sm danger" data-act="cancelRun" data-id="'+r.id+'">Annuler</button>':'')+'</div>'+(r.log||[]).map(l=>'<div class="log"><b>'+esc(l.title)+'</b> — '+esc(l.status)+(l.err?'<div class="late">'+esc(l.err)+'</div>':'')+(l.out?'<div class="small">'+esc(l.out.slice(0,160))+'…</div>':'')+'</div>').join('')+(r.status==='terminé'&&r.result?'<div class="row end"><button class="btn sm" data-act="showRun" data-id="'+r.id+'">Voir le résultat</button></div>':'')+(r.error?'<div class="late">'+esc(r.error)+'</div>':'')+'</div>').join(''):'<div class="empty">Jamais exécutée.</div>');};
+
+V.integrations=()=>{
+  const g=S.settings.provider==='gemini'&&aiReady();
+  const row=(ic,name,desc,badge,btn)=>'<div class="card"><div class="row"><span style="font-size:24px">'+ic+'</span><div class="grow"><div class="t">'+name+'</div><div class="sub">'+desc+'</div></div><span class="badge '+badge[0]+'">'+badge[1]+'</span></div>'+(btn||'')+'</div>';
+  return '<p class="small">Chaque intégration affiche son état réel. Rien n\'est simulé.</p>'+
+  row('🌐','Recherche web (Google, via Gemini)','Résultats sourcés dans le chat (bouton « Recherche web »). Gratuit dans les limites de votre clé Gemini.',g?['ok','Opérationnelle']:['warn','À configurer'],g?'<div class="row end"><button class="btn sm" data-act="testSearch">Tester</button></div>':'<div class="small">Requiert le fournisseur Gemini et une clé dans Paramètres.</div>')+
+  row('💾','Sauvegarde / restauration','Export et import JSON de vos données (hors fichiers).',['ok','Opérationnelle'],'<div class="row end"><button class="btn sm" data-act="nav" data-v="settings">Ouvrir Paramètres</button></div>')+
+  row('📅','Google Agenda','Nécessite une connexion OAuth et un serveur : indisponible sans backend.',['err','Non configurée'])+
+  row('✉️','Email','Aucun envoi possible depuis cette version. L\'assistant peut seulement rédiger un brouillon.',['err','Non configurée'])+
+  row('🔔','Notifications / rappels','Nécessite un service de notification push : non disponible. Consultez la vue « Tâches ».',['err','Non configurée'])+
+  row('🤖','Serveur MCP (ChatGPT)','Nécessite un serveur public : hors périmètre de la version téléphone seul.',['err','Non configurée']);
+};
+V.more=()=>[['files','📄','Fichiers','Importer, résumer, analyser'],['auto','⚙️','Automatisations','Workflows avec validation'],['memory','🧠','Mémoire','Ce que NEXUS retient'],['integrations','🔌','Intégrations','État des connexions'],['settings','⚙','Paramètres','IA, sécurité, données']].map(x=>'<div class="item" data-act="nav" data-v="'+x[0]+'"><span style="font-size:24px">'+x[1]+'</span><div class="grow"><div class="t">'+x[2]+'</div><div class="sub">'+x[3]+'</div></div>›</div>').join('');
+
+V.settings=()=>{const s=S.settings,pv=prov();const recent=S.audit.slice(0,12);
+  return '<div class="card"><h3>Profil</h3><form data-form="saveProfile"><label class="fld"><span>Prénom</span><input name="name" value="'+esc(s.name)+'"></label><label class="fld"><span>Thème</span><select name="theme">'+[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(o=>'<option value="'+o[0]+'" '+(s.theme===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select></label><button class="btn pri">Enregistrer</button></form></div>'+
+  '<div class="card"><h3>Intelligence artificielle</h3><form data-form="saveAI"><label class="fld"><span>Fournisseur</span><select name="provider" id="provSel">'+Object.entries(PROVIDERS).map(([k,v])=>'<option value="'+k+'" '+(s.provider===k?'selected':'')+'>'+v.name+'</option>').join('')+'</select></label><label class="fld"><span>Clé API (stockée uniquement sur cet appareil)</span><input name="key" type="password" placeholder="'+(apiKey()?'•••••••• clé enregistrée (laisser vide pour conserver)':'Collez votre clé ici')+'" autocomplete="off"></label><label class="fld"><span>Modèle</span><input name="model" value="'+esc(modelName())+'"></label><label class="fld"><span>Plafond d\'appels IA par jour</span><input name="cap" type="number" min="1" max="2000" value="'+s.dailyCap+'"></label><div class="row"><button class="btn pri">Enregistrer</button><button type="button" class="btn" data-act="testAI">Tester la connexion</button></div></form><p class="small">Obtenir une clé gratuite : <a href="'+pv.keyUrl+'" target="_blank" rel="noopener" id="keyLink">'+pv.keyUrl+'</a><br>Aujourd\'hui : '+(S.usage.date===todayStr()?S.usage.count:0)+' appel(s) IA. Vos messages sont envoyés au fournisseur choisi ; la clé n\'est jamais incluse dans les sauvegardes.</p></div>'+
+  '<div class="card"><h3>Confidentialité et sécurité</h3><div class="row"><label class="row"><input type="checkbox" id="useMem" '+(s.useMemory?'checked':'')+' style="width:22px;min-height:22px"> Utiliser ma mémoire dans les réponses</label></div><div class="row" style="margin-top:10px"><button class="btn" data-act="setPin">'+(s.pinHash?'Changer le code':'Définir un code de verrouillage')+'</button>'+(s.pinHash?'<button class="btn" data-act="rmPin">Retirer</button>':'')+'</div><p class="small">Le code protège l\'ouverture de l\'app mais ne chiffre pas les données : verrouillez aussi votre téléphone.</p></div>'+
+  '<div class="card"><h3>Données</h3><div class="row"><button class="btn" data-act="exportData">Exporter (JSON)</button><button class="btn" data-act="importData">Importer</button><button class="btn danger" data-act="wipe">Tout effacer</button></div></div>'+
+  '<div class="card"><h3>Journal d\'activité</h3>'+(recent.length?recent.map(a=>'<div class="small">'+esc(fmtDT(a.at))+' · '+esc(a.action)+' · '+esc(a.type)+'</div>').join(''):'<div class="small">Aucune activité.</div>')+'</div><p class="small" style="text-align:center">NEXUS AI V1 — données locales sur cet appareil</p>';
+};
+
+/* ============ Rendu / navigation ============ */
+const NAVI=[['home','🏠','Accueil'],['chat','💬','Assistant'],['projects','📁','Projets'],['tasks','✅','Tâches'],['more','☰','Plus']];
+function render(){
+  const v=route.v;const m=$('#main');const st=m.scrollTop;
+  m.className=v==='chat'?'chatmode':'';
+  m.innerHTML=V[v](route.p);
+  $('#title').textContent=v==='workflow'?'Automatisation':TITLES[v];
+  $('#backBtn').style.display=PARENT[v]?'':'none';
+  $('#nav').innerHTML=NAVI.map(([k,i,l])=>'<button class="'+(NAVOF(v)===k?'on':'')+'" data-act="nav" data-v="'+k+'"><span>'+i+'</span>'+l+'</button>').join('');
+  if(v==='chat'){if(!cur&&S.conversations[0])cur=S.conversations[0].id;renderChatBody();const q=$('#q');q.addEventListener('input',()=>{q.style.height='auto';q.style.height=Math.min(q.scrollHeight,140)+'px'});q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&matchMedia('(pointer:fine)').matches){e.preventDefault();$('form.composer').requestSubmit()}})}
+  else m.scrollTop=st;
+}
+
+/* ============ Actions (clics) ============ */
+const A={
+  nav:d=>go(d.v),
+  back:()=>go(PARENT[route.v]||'home'),
+  openProject:d=>go('project',d.id),
+  newProject:()=>formSheet({title:'Nouveau projet',fields:[{name:'name',label:'Nom',required:true},{name:'description',label:'Description',type:'textarea'}]},v=>{const p={id:uid(),name:v.name.trim(),description:v.description.trim(),status:'actif',created_at:nowISO()};S.projects.unshift(p);audit('create','project',p.id);save();render()}),
+  editProject:d=>{const p=proj(d.id);formSheet({title:'Modifier le projet',fields:[{name:'name',label:'Nom',value:p.name,required:true},{name:'description',label:'Description',type:'textarea',value:p.description},{name:'status',label:'Statut',type:'select',value:p.status,options:['actif','archivé']}],onDelete:()=>{S.tasks.forEach(t=>{if(t.projectId===p.id)t.projectId=null});S.files.forEach(f=>{if(f.projectId===p.id)f.projectId=null});S.memories.forEach(m=>{if(m.projectId===p.id)m.projectId=null});S.projects=S.projects.filter(x=>x.id!==p.id);audit('delete','project',p.id);save();go('projects')}},v=>{p.name=v.name.trim();p.description=v.description.trim();p.status=v.status;audit('update','project',p.id);save();render()})},
+  chatProject:d=>{const c={id:uid(),title:'Nouvelle conversation',projectId:d.id,created_at:nowISO(),updated_at:nowISO()};S.conversations.unshift(c);S.messages[c.id]=[];cur=c.id;save();go('chat')},
+  newTask:d=>taskForm(null,d&&d.p),
+  editTask:d=>taskForm(S.tasks.find(t=>t.id===d.id)),
+  toggleTask:d=>{const t=S.tasks.find(x=>x.id===d.id);t.status=t.status==='terminée'?'à faire':'terminée';audit('update','task',t.id);save();render()},
+  tf:d=>{tf=d.f;render()},
+  newConv:()=>{cur=null;chatErr=null;pending=[];go('chat')},
+  convList:()=>{const o=sheet('<h3>Conversations</h3>'+(S.conversations.length?S.conversations.map(c=>'<div class="item"><div class="grow" data-act="openConv" data-id="'+c.id+'"><div class="t">'+esc(c.title)+'</div><div class="sub">'+esc(fmtDT(c.updated_at))+'</div></div><button class="btn sm ghost" data-act="delConv" data-id="'+c.id+'">🗑</button></div>').join(''):'<div class="empty">Aucune conversation.</div>')+'<div class="row end"><button class="btn ghost" data-close>Fermer</button></div>');o.id='convSheet'},
+  openConv:d=>{cur=d.id;chatErr=null;$('#convSheet')&&$('#convSheet').remove();go('chat')},
+  delConv:async d=>{if(!await confirmDlg('Supprimer cette conversation ?',{danger:true,ok:'Supprimer'}))return;S.conversations=S.conversations.filter(c=>c.id!==d.id);delete S.messages[d.id];if(cur===d.id)cur=null;audit('delete','conversation',d.id);save();$('#convSheet')&&$('#convSheet').remove();render()},
+  renameConv:()=>{const c=conv();if(!c)return toast('Envoyez d\'abord un message');formSheet({title:'Conversation',fields:[{name:'title',label:'Titre',value:c.title,required:true},{name:'projectId',label:'Projet associé',type:'select',value:c.projectId||'',options:[['','Aucun'],...S.projects.map(p=>[p.id,p.name])]}]},v=>{c.title=v.title.trim();c.projectId=v.projectId||null;save();render()})},
+  suggest:d=>sendChat(d.q),
+  toggleWeb:()=>{if(!webOn&&!(S.settings.provider==='gemini'))return toast('La recherche web nécessite Google Gemini (Paramètres).');webOn=!webOn;render()},
+  toggleMem:()=>{S.settings.useMemory=!S.settings.useMemory;save();render()},
+  attach:()=>{const o=sheet('<h3>Joindre un fichier</h3><button class="btn pri" data-act="attachNew" style="width:100%;margin-bottom:10px">＋ Importer un nouveau fichier</button>'+(S.files.length?S.files.map(f=>'<div class="item" data-act="attachPick" data-id="'+f.id+'"><div class="grow"><div class="t">'+esc(f.name)+'</div><div class="sub">'+fmtSize(f.size)+'</div></div></div>').join(''):'')+'<div class="row end"><button class="btn ghost" data-close>Fermer</button></div>');o.id='attSheet'},
+  attachPick:d=>{if(!pending.includes(d.id))pending.push(d.id);$('#attSheet')&&$('#attSheet').remove();renderPend()},
+  attachNew:()=>{fileIn.dataset.mode='attach';fileIn.click()},
+  unattach:(d,a,e)=>{e.preventDefault();pending=pending.filter(x=>x!==d.id);renderPend()},
+  copyMsg:d=>{const m=findMsg(d.m);copyText(m.content)},
+  exportMsg:d=>{const m=findMsg(d.m);exportSheet((conv()||{title:'Document'}).title,m.content)},
+  remMsg:d=>{const m=findMsg(d.m);formSheet({title:'Enregistrer en mémoire',fields:[{name:'content',label:'Contenu à retenir',type:'textarea',value:m.content.slice(0,500)},{name:'category',label:'Catégorie',type:'select',options:CATS,value:'autre'}]},v=>{S.memories.unshift({id:uid(),category:v.category,content:v.content.trim(),source:'conversation (confirmé)',projectId:null,status:'active',created_at:nowISO(),updated_at:nowISO()});audit('create','memory');save();toast('Mémoire enregistrée')})},
+  actYes:d=>{const m=findMsg(d.m),a=m.actions[+d.i];try{a.result=execAction(a);a.status='done'}catch(e){a.status='failed';a.result=e.message}save();renderChatBody()},
+  actNo:d=>{const m=findMsg(d.m);m.actions[+d.i].status='dismissed';save();renderChatBody()},
+  retry:()=>sendChat('',true),
+  importBtn:d=>{fileIn.dataset.mode='lib';fileIn.dataset.p=d&&d.p||'';fileIn.click()},
+  fileMenu:d=>fileMenu(S.files.find(f=>f.id===d.id)),
+  newMem:d=>memForm(null,d&&d.p),
+  editMem:d=>memForm(S.memories.find(m=>m.id===d.id)),
+  memCat:d=>{memCat=d.c;render()},
+  exportMem:()=>download(new Blob([JSON.stringify(S.memories,null,2)],{type:'application/json'}),'nexus-memoires.json'),
+  newWfAI:()=>formSheet({title:'Créer une automatisation',intro:'Décrivez l\'objectif. L\'assistant propose des étapes en brouillon ; vous validerez avant toute exécution.',fields:[{name:'goal',label:'Objectif',type:'textarea',required:true,placeholder:'Ex. : résumer un sujet, en tirer 3 actions et me préparer un plan'}],submit:'Générer'},async v=>{
+    toast('Génération du brouillon…',15000);
+    try{const r=await ai({system:'Tu conçois des workflows séquentiels. Réponds UNIQUEMENT par un JSON valide : {"name":"...","steps":[{"type":"ai","title":"...","prompt":"..."},{"type":"task","title":"...","taskTitle":"..."}]}. 2 à 5 étapes. Dans un prompt tu peux utiliser {{prev}} pour insérer le résultat de l\'étape précédente. Les étapes de type task créent une tâche dans l\'app. Écris en français.',history:[{role:'user',content:v.goal}]});
+      const j=extractJSON(r.text);if(!j||!Array.isArray(j.steps)||!j.steps.length)throw new Error('Le brouillon généré est invalide. Reformulez ou créez-le manuellement.');
+      const w={id:uid(),name:String(j.name||'Automatisation').slice(0,100),steps:j.steps.slice(0,6).map(s=>s.type==='task'?{type:'task',title:String(s.title||'Tâche').slice(0,80),taskTitle:String(s.taskTitle||s.title||'Tâche')}:{type:'ai',title:String(s.title||'Étape').slice(0,80),prompt:String(s.prompt||'')}).filter(s=>s.type==='task'||s.prompt),status:'brouillon',version:1,created_at:nowISO()};
+      S.workflows.unshift(w);audit('create','workflow',w.id);save();toast('Brouillon créé');go('workflow',w.id)}catch(e){toast(e.message,5000)}}),
+  newWfManual:()=>formSheet({title:'Nouvelle automatisation',fields:[{name:'name',label:'Nom',required:true}]},v=>{const w={id:uid(),name:v.name.trim(),steps:[],status:'brouillon',version:1,created_at:nowISO()};S.workflows.unshift(w);audit('create','workflow',w.id);save();go('workflow',w.id)}),
+  openWf:d=>go('workflow',d.id),
+  addStep:d=>{const w=S.workflows.find(x=>x.id===d.id);formSheet({title:'Ajouter une étape',fields:[{name:'type',label:'Type',type:'select',options:[['ai','Instruction pour l\'IA'],['task','Créer une tâche']]},{name:'title',label:'Titre',required:true},{name:'prompt',label:'Instruction IA (utilisez {{prev}} pour le résultat précédent) ou titre de la tâche',type:'textarea',required:true}]},v=>{w.steps.push(v.type==='task'?{type:'task',title:v.title,taskTitle:v.prompt}:{type:'ai',title:v.title,prompt:v.prompt});w.version=(w.version||1)+1;save();render()})},
+  delStep:d=>{const w=S.workflows.find(x=>x.id===d.id);w.steps.splice(+d.i,1);w.version=(w.version||1)+1;save();render()},
+  delWf:async d=>{if(!await confirmDlg('Supprimer cette automatisation et son historique ?',{danger:true,ok:'Supprimer'}))return;S.workflows=S.workflows.filter(w=>w.id!==d.id);S.runs=S.runs.filter(r=>r.wfId!==d.id);audit('delete','workflow',d.id);save();go('auto')},
+  runWf:d=>{const w=S.workflows.find(x=>x.id===d.id);if(!w.steps.length)return toast('Ajoutez au moins une étape');
+    const run={id:uid(),wfId:w.id,status:'en attente de validation',created_at:nowISO(),log:[]};S.runs.push(run);save();
+    const o=sheet('<h3>Valider l\'exécution</h3><p><b>'+esc(w.name)+'</b> — '+w.steps.length+' étape(s) :</p><ol>'+w.steps.map(s=>'<li>'+esc(s.title)+'</li>').join('')+'</ol><p class="mut">Permissions utilisées : '+wfPerms(w).map(esc).join(' · ')+'</p><div class="row end"><button class="btn ghost" data-no>Annuler</button><button class="btn pri" data-yes>Lancer</button></div>');
+    o.addEventListener('click',e=>{if(e.target.closest('[data-yes]')){o.remove();runWorkflow(w,run)}else if(e.target.closest('[data-no]')||e.target===o){run.status='annulé';save();o.remove();render()}});render()},
+  cancelRun:d=>{const r=S.runs.find(x=>x.id===d.id);r.cancel=true;toast('Annulation après l\'étape en cours')},
+  showRun:d=>{const r=S.runs.find(x=>x.id===d.id);const w=S.workflows.find(x=>x.id===r.wfId);resultSheet(w?w.name:'Résultat',r.result)},
+  testSearch:async()=>{toast('Test en cours…',15000);try{const r=await ai({system:'Réponds en une phrase.',history:[{role:'user',content:'Quelle est la date du jour d\'après le web ?'}],search:true});toast(r.sources.length?'✓ Recherche opérationnelle ('+r.sources.length+' source(s))':'Réponse reçue mais sans source : fonction à vérifier',5000)}catch(e){toast(e.message,5000)}},
+  testAI:async()=>{toast('Test en cours…',15000);try{const r=await ai({system:'Réponds uniquement par le mot OK.',history:[{role:'user',content:'Test'}]});toast('✓ Connexion réussie : '+r.text.slice(0,30),4000)}catch(e){toast(e.message,6000)}},
+  setPin:()=>formSheet({title:'Code de verrouillage',fields:[{name:'pin',label:'Code (4 à 8 chiffres)',type:'password',required:true,attrs:'inputmode="numeric" pattern="[0-9]{4,8}"'}]},async v=>{if(!/^\d{4,8}$/.test(v.pin)){toast('4 à 8 chiffres');return false}const salt=uid();S.settings.pinSalt=salt;S.settings.pinHash=await sha(salt+v.pin);audit('update','pin');save();render();toast('Code enregistré')}),
+  rmPin:async()=>{if(!await confirmDlg('Retirer le code de verrouillage ?'))return;S.settings.pinHash=null;save();render()},
+  exportData:()=>{const c=JSON.parse(JSON.stringify(S));c.settings.keys={};c.settings.pinHash=null;download(new Blob([JSON.stringify(c)],{type:'application/json'}),'nexus-sauvegarde-'+todayStr()+'.json');audit('export','backup');save();toast('Sauvegarde générée (sans clés ni fichiers)')},
+  importData:()=>{fileIn.dataset.mode='backup';fileIn.click()},
+  wipe:async()=>{if(!await confirmDlg('Effacer TOUTES les données de NEXUS AI sur cet appareil (tâches, projets, mémoires, fichiers, clés) ?',{danger:true,ok:'Tout effacer'}))return;if(!await confirmDlg('Dernière confirmation : cette action est irréversible.',{danger:true,ok:'Oui, effacer'}))return;localStorage.removeItem(KEY);try{indexedDB.deleteDatabase('nexus-ai')}catch(e){}location.reload()},
+};
+const findMsg=id=>{const c=conv();return (S.messages[c.id]||[]).find(m=>m.id===id)};
+async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function taskForm(t,projectId){
+  const fields=[{name:'title',label:'Titre',value:t?t.title:'',required:true},{name:'due',label:'Échéance',type:'date',value:t?t.due:''},{name:'priority',label:'Priorité',type:'select',value:t?t.priority:'normale',options:['haute','normale','basse']},{name:'projectId',label:'Projet',type:'select',value:t?(t.projectId||''):(projectId||''),options:[['','Aucun'],...S.projects.map(p=>[p.id,p.name])]},{name:'notes',label:'Notes',type:'textarea',value:t?t.notes:'',rows:3}];
+  formSheet({title:t?'Modifier la tâche':'Nouvelle tâche',fields,onDelete:t?()=>{S.tasks=S.tasks.filter(x=>x.id!==t.id);audit('delete','task',t.id);save();render()}:null},v=>{
+    if(t){Object.assign(t,{title:v.title.trim(),due:v.due,priority:v.priority,projectId:v.projectId||null,notes:v.notes});audit('update','task',t.id)}
+    else{const n={id:uid(),title:v.title.trim(),due:v.due,priority:v.priority,status:'à faire',projectId:v.projectId||null,notes:v.notes,created_at:nowISO()};S.tasks.unshift(n);audit('create','task',n.id)}
+    save();render()});
+}
+function memForm(m,projectId){
+  formSheet({title:m?'Modifier la mémoire':'Nouvelle mémoire',fields:[{name:'content',label:'À retenir',type:'textarea',value:m?m.content:'',required:true},{name:'category',label:'Catégorie',type:'select',options:CATS,value:m?m.category:'autre'},{name:'projectId',label:'Projet',type:'select',value:m?(m.projectId||''):(projectId||''),options:[['','Aucun'],...S.projects.map(p=>[p.id,p.name])]}],onDelete:m?()=>{S.memories=S.memories.filter(x=>x.id!==m.id);audit('delete','memory',m.id);save();render()}:null},v=>{
+    if(m){Object.assign(m,{content:v.content.trim(),category:v.category,projectId:v.projectId||null,updated_at:nowISO()});audit('update','memory',m.id)}
+    else{const n={id:uid(),category:v.category,content:v.content.trim(),source:'manuel',projectId:v.projectId||null,status:'active',created_at:nowISO(),updated_at:nowISO()};S.memories.unshift(n);audit('create','memory',n.id)}
+    save();render()});
+}
+function fileMenu(f){
+  const can=f.status==='ok'||f.status==='image';
+  const o=sheet('<h3>'+esc(f.name)+'</h3><p class="small">'+fmtSize(f.size)+(f.chars?' · '+f.chars+' caractères extraits':'')+'</p>'+(f.note?'<p class="late small">'+esc(f.note)+'</p>':'')+'<div class="grid">'+(can?'<button class="btn" data-a="sum">📝 Résumer</button><button class="btn" data-a="ana">🔎 Analyser…</button>':'')+(f.status==='ok'?'<button class="btn" data-a="find">🔍 Chercher un passage</button><button class="btn" data-a="cmp">⇄ Comparer…</button>':'')+'<button class="btn" data-a="dl">⬇ Télécharger</button><button class="btn" data-a="proj">📁 Projet</button><button class="btn danger" data-a="del">🗑 Supprimer</button></div><div class="row end"><button class="btn ghost" data-close>Fermer</button></div>');
+  const run=async(obj,title)=>{o.remove();toast('Analyse en cours…',20000);try{const r=await analyzeFile(f,obj);audit('analyze','file',f.id);save();$('#toast').style.display='none';resultSheet(title,r.text)}catch(e){toast(e.message,6000)}};
+  o.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+    if(a==='sum')run('Résume ce document : points clés, chiffres importants, conclusions.','Résumé — '+f.name);
+    else if(a==='ana'){o.remove();formSheet({title:'Analyser',fields:[{name:'obj',label:'Que voulez-vous savoir ?',type:'textarea',required:true,placeholder:'Ex. : liste les risques, extrais les dates clés…'}],submit:'Analyser'},v=>{toast('Analyse en cours…',20000);analyzeFile(f,v.obj).then(r=>{audit('analyze','file',f.id);save();$('#toast').style.display='none';resultSheet('Analyse — '+f.name,r.text)}).catch(er=>toast(er.message,6000))})}
+    else if(a==='find'){o.remove();formSheet({title:'Chercher un passage',fields:[{name:'q',label:'Mot ou expression',required:true}],submit:'Chercher'},async v=>{const t=(await idbGet('texts',f.id))||'';const q=v.q.toLowerCase(),tl=t.toLowerCase();const out=[];let i=0;while(out.length<12&&(i=tl.indexOf(q,i))>=0){out.push('…'+t.slice(Math.max(0,i-90),i+q.length+90).replace(/\s+/g,' ')+'…');i+=q.length}
+      resultSheet('Résultats — '+v.q,out.length?out.map(x=>'- '+x).join('\n'):'Aucun passage trouvé.');})}
+    else if(a==='cmp'){o.remove();const others=S.files.filter(x=>x.id!==f.id&&x.status==='ok');if(!others.length)return toast('Importez un second document texte à comparer');formSheet({title:'Comparer avec…',fields:[{name:'other',label:'Autre fichier',type:'select',options:others.map(x=>[x.id,x.name])}],submit:'Comparer'},async v=>{const g=S.files.find(x=>x.id===v.other);const half=Math.floor(prov().maxChars/2);const t1=((await idbGet('texts',f.id))||'').slice(0,half),t2=((await idbGet('texts',g.id))||'').slice(0,half);toast('Comparaison en cours…',20000);try{const r=await ai({system:systemPrompt('\nTu compares deux versions d\'un document : liste les ajouts, suppressions et modifications importantes, sans rien inventer.'),history:[{role:'user',content:'Version A « '+f.name+' » :\n'+t1+'\n\nVersion B « '+g.name+' » :\n'+t2}]});$('#toast').style.display='none';resultSheet('Comparaison',r.text)}catch(er){toast(er.message,6000)}})}
+    else if(a==='dl'){const b=await idbGet('blobs',f.id);if(b)download(b,f.name);else toast('Fichier introuvable')}
+    else if(a==='proj'){o.remove();formSheet({title:'Associer à un projet',fields:[{name:'p',label:'Projet',type:'select',value:f.projectId||'',options:[['','Aucun'],...S.projects.map(p=>[p.id,p.name])]}]},v=>{f.projectId=v.p||null;save();render()})}
+    else if(a==='del'){if(!await confirmDlg('Supprimer ce fichier de la bibliothèque ?',{danger:true,ok:'Supprimer'}))return;o.remove();await idbDel('blobs',f.id);await idbDel('texts',f.id);S.files=S.files.filter(x=>x.id!==f.id);pending=pending.filter(x=>x!==f.id);audit('delete','file',f.id);save();render()}
+  });
+}
+
+/* ============ Formulaires & événements ============ */
+const FORMS={
+  homeAsk:f=>{const q=f.q.value.trim();if(!q)return;cur=null;chatErr=null;go('chat');sendChat(q)},
+  chatSend:f=>{const q=f.q.value;f.q.value='';f.q.style.height='auto';sendChat(q)},
+  quickTask:f=>{const t={id:uid(),title:f.title.value.trim(),due:tf==='today'?todayStr():'',priority:'normale',status:'à faire',projectId:null,notes:'',created_at:nowISO()};if(!t.title)return;S.tasks.unshift(t);audit('create','task',t.id);save();render()},
+  saveProfile:f=>{S.settings.name=f.name.value.trim();S.settings.theme=f.theme.value;save();applyTheme();toast('Enregistré');render()},
+  saveAI:f=>{const p=f.provider.value;S.settings.provider=p;if(f.key.value.trim())S.settings.keys[p]=f.key.value.trim();const m=f.model.value.trim();if(m&&m!==PROVIDERS[p].model)S.settings.models[p]=m;else delete S.settings.models[p];S.settings.dailyCap=Math.max(1,Math.min(2000,+f.cap.value||200));if(!S.settings.keys[p])toast('Fournisseur enregistré — clé manquante');else toast('Enregistré');audit('update','ai_settings');save();render()}
+};
+document.addEventListener('submit',e=>{const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();FORMS[f.dataset.form](f)});
+document.addEventListener('click',e=>{
+  if(e.target.closest('[data-close]')){const o=e.target.closest('.overlay');o&&o.remove();return}
+  const a=e.target.closest('[data-act]');if(!a)return;if(a.tagName==='A')e.preventDefault();
+  const fn=A[a.dataset.act];if(fn)Promise.resolve(fn(a.dataset,a,e)).catch(err=>toast(err&&err.message||'Erreur'));
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='memQ'){memQ=e.target.value;$('#memList').innerHTML=memListHTML()}
+  else if(e.target.id==='fileQ'){fileQ=e.target.value;$('#fileList').innerHTML=fileListHTML()}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='provSel'){const p=e.target.value;const f=e.target.form;f.model.value=S.settings.models[p]||PROVIDERS[p].model;$('#keyLink').href=$('#keyLink').textContent=PROVIDERS[p].keyUrl;f.key.placeholder=S.settings.keys[p]?'•••••••• clé enregistrée':'Collez votre clé ici'}
+  else if(e.target.id==='useMem'){S.settings.useMemory=e.target.checked;save()}
+});
+const fileIn=$('#fileIn');
+fileIn.addEventListener('change',async()=>{
+  const list=[...fileIn.files];const mode=fileIn.dataset.mode;fileIn.value='';if(!list.length)return;
+  if(mode==='backup'){try{const j=JSON.parse(await list[0].text());if(!j.settings||!Array.isArray(j.tasks))throw new Error();if(!await confirmDlg('Remplacer les données actuelles par cette sauvegarde ? (vos clés API sont conservées)',{danger:true,ok:'Restaurer'}))return;const keep=S.settings.keys;const pin=[S.settings.pinHash,S.settings.pinSalt];S=Object.assign(defaults(),j);S.settings=Object.assign(defaults().settings,j.settings);S.settings.keys=keep;S.settings.pinHash=pin[0];S.settings.pinSalt=pin[1];S.files=[];audit('import','backup');save();toast('Sauvegarde restaurée (les fichiers ne sont pas inclus)');render()}catch(e){toast('Sauvegarde invalide')}return}
+  if(mode==='attach'){for(const f of list){try{await importFile(f,null);pending.push(S.files[0].id)}catch(e){toast(e.message,5000)}}$('#attSheet')&&$('#attSheet').remove();renderPend();return}
+  await importFiles(list,fileIn.dataset.p||null);
+});
+
+/* ============ Démarrage ============ */
+function lockScreen(){
+  const o=document.createElement('div');o.className='lock';o.innerHTML='<div style="font-size:42px">🔒</div><h2 style="margin:0">NEXUS AI</h2><form><input type="password" inputmode="numeric" placeholder="Code" autocomplete="off" autofocus></form><div class="small" id="lockMsg" style="color:#fff9"></div>';document.body.appendChild(o);
+  $('form',o).addEventListener('submit',async e=>{e.preventDefault();const v=$('input',o).value;if(await sha(S.settings.pinSalt+v)===S.settings.pinHash)o.remove();else{$('#lockMsg',o).textContent='Code incorrect';$('input',o).value=''}});
+}
+applyTheme();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+if(S.settings.pinHash)lockScreen();
+if(S.conversations[0])cur=S.conversations[0].id;
+render();
+addEventListener('offline',()=>toast('Hors connexion : l\'IA est indisponible'));
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
