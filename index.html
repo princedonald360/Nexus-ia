@@ -109,7 +109,7 @@ function toast(m,ms=3200){const t=$('#toast');t.textContent=m;t.style.display='b
 
 /* ============ Données ============ */
 const KEY='nexus_ai_v1';
-const defaults=()=>({settings:{provider:'gemini',models:{},keys:{},theme:'auto',useMemory:true,pinHash:null,pinSalt:null,name:'',dailyCap:200},usage:{date:'',count:0},conversations:[],messages:{},projects:[],tasks:[],memories:[],files:[],workflows:[],runs:[],audit:[]});
+const defaults=()=>({settings:{provider:'gemini',models:{},keys:{},theme:'auto',useMemory:true,fallback:true,pinHash:null,pinSalt:null,name:'',dailyCap:200},usage:{date:'',count:0},conversations:[],messages:{},projects:[],tasks:[],memories:[],files:[],workflows:[],runs:[],audit:[]});
 function load(){try{const d=defaults(),j=JSON.parse(localStorage.getItem(KEY)||'{}');const s=Object.assign(d,j);s.settings=Object.assign(d.settings,j.settings||{});return s}catch(e){return defaults()}}
 let S=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Stockage plein : exportez vos données puis supprimez des éléments.')}}
@@ -205,7 +205,7 @@ function exportSheet(title,text){
 /* ============ Couche IA ============ */
 const PROVIDERS={
   gemini:{name:'Google Gemini',model:'gemini-flash-latest',keyUrl:'https://aistudio.google.com/apikey',maxChars:150000,search:true,vision:true},
-  groq:{name:'Groq',model:'llama-3.3-70b-versatile',keyUrl:'https://console.groq.com/keys',maxChars:18000,search:false,vision:false},
+  groq:{name:'Groq',model:'llama-3.3-70b-versatile',keyUrl:'https://console.groq.com/keys',maxChars:18000,search:true,vision:false},
   openrouter:{name:'OpenRouter',model:'meta-llama/llama-3.3-70b-instruct:free',keyUrl:'https://openrouter.ai/keys',maxChars:40000,search:false,vision:false}
 };
 const prov=()=>PROVIDERS[S.settings.provider];
@@ -221,33 +221,55 @@ function apiError(status,j){const m=(j&&(j.error&&(j.error.message||j.error)||j.
   if(status===404)return 'Modèle introuvable : modifiez le nom du modèle dans Paramètres.';
   return 'Erreur du service IA ('+status+')'+(m?' : '+String(m).slice(0,200):'');}
 function useQuota(){const d=todayStr();if(S.usage.date!==d)S.usage={date:d,count:0};if(S.usage.count>=S.settings.dailyCap)throw new Error('Plafond quotidien de '+S.settings.dailyCap+' appels IA atteint (réglable dans Paramètres).');S.usage.count++;save()}
-async function ai({system,history,search=false,images=[]}){
-  if(!apiKey())throw new Error('IA non configurée : ajoutez une clé API gratuite dans Paramètres.');
-  if(search&&!prov().search)throw new Error('La recherche web nécessite le fournisseur Google Gemini (non configurée avec '+prov().name+').');
-  if(images.length&&!prov().vision)throw new Error('L\'analyse d\'images nécessite Google Gemini.');
-  useQuota();
-  const model=modelName();
-  if(S.settings.provider==='gemini'){
+const keyOf=p=>S.settings.keys[p]||'';
+const modelOf=p=>S.settings.models[p]||PROVIDERS[p].model;
+function mkErr(p,status,j){const e=new Error(PROVIDERS[p].name+' : '+apiError(status,j));e.retry=[404,413,429,500,502,503,504].includes(status);return e}
+function providerOrder(search,images){
+  const first=S.settings.provider;
+  const all=[first,...Object.keys(PROVIDERS).filter(k=>k!==first)];
+  return (S.settings.fallback===false?[first]:all).filter(k=>keyOf(k)&&(!search||PROVIDERS[k].search)&&(!images.length||PROVIDERS[k].vision));
+}
+async function callProvider(p,{system,history,search,images}){
+  const key=keyOf(p);let model=modelOf(p);
+  if(p==='gemini'){
     const contents=history.map((m,i)=>{const parts=[{text:m.content}];if(i===history.length-1&&m.role==='user')images.forEach(im=>parts.push({inlineData:{mimeType:im.mime,data:im.data}}));return {role:m.role==='assistant'?'model':'user',parts}});
     const body={contents,systemInstruction:{parts:[{text:system}]}};
     if(search)body.tools=[{google_search:{}}];
-    const r=await fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey()},body:JSON.stringify(body)});
+    const r=await fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify(body)});
     const j=await r.json().catch(()=>null);
-    if(!r.ok)throw new Error(apiError(r.status,j));
+    if(!r.ok)throw mkErr(p,r.status,j);
     const c=j&&j.candidates&&j.candidates[0];
-    const text=c&&c.content&&c.content.parts?c.content.parts.map(p=>p.text||'').join(''):'';
-    if(!text)throw new Error('Réponse vide ou bloquée par le fournisseur. Reformulez votre demande.');
+    const text=c&&c.content&&c.content.parts?c.content.parts.map(x=>x.text||'').join(''):'';
+    if(!text){const e=new Error('Gemini : réponse vide ou bloquée. Reformulez votre demande.');e.retry=true;throw e}
     const chunks=(c.groundingMetadata&&c.groundingMetadata.groundingChunks)||[];
-    const sources=chunks.filter(x=>x.web).map(x=>({title:x.web.title,uri:x.web.uri}));
-    return {text,sources};
+    return {text,sources:chunks.filter(x=>x.web).map(x=>({title:x.web.title,uri:x.web.uri}))};
   }
-  const url=S.settings.provider==='groq'?'https://api.groq.com/openai/v1/chat/completions':'https://openrouter.ai/api/v1/chat/completions';
-  const r=await fetchT(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey()},body:JSON.stringify({model,messages:[{role:'system',content:system},...history]})});
+  if(p==='groq'&&search&&!/compound/.test(model))model='groq/compound-mini';
+  const url=p==='groq'?'https://api.groq.com/openai/v1/chat/completions':'https://openrouter.ai/api/v1/chat/completions';
+  const r=await fetchT(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'system',content:system},...history]})});
   const j=await r.json().catch(()=>null);
-  if(!r.ok)throw new Error(apiError(r.status,j));
-  const text=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
-  if(!text)throw new Error('Réponse vide du fournisseur.');
-  return {text,sources:[]};
+  if(!r.ok)throw mkErr(p,r.status,j);
+  const msg=j&&j.choices&&j.choices[0]&&j.choices[0].message;
+  const text=msg&&msg.content;
+  if(!text){const e=new Error(PROVIDERS[p].name+' : réponse vide.');e.retry=true;throw e}
+  const sources=[];((msg.executed_tools)||[]).forEach(t=>{const rs=t.search_results&&t.search_results.results;(rs||[]).forEach(x=>x.url&&sources.push({title:x.title,uri:x.url}))});
+  return {text,sources};
+}
+async function ai({system,history,search=false,images=[]}){
+  const order=providerOrder(search,images);
+  if(!order.length){
+    if(!Object.keys(PROVIDERS).some(keyOf))throw new Error('IA non configurée : ajoutez une clé API gratuite dans Paramètres.');
+    if(search)throw new Error('La recherche web nécessite une clé Gemini ou Groq (Paramètres).');
+    throw new Error('L\'analyse d\'images nécessite une clé Google Gemini.');
+  }
+  useQuota();
+  let lastErr;
+  for(const p of order){
+    try{const r=await callProvider(p,{system,history,search,images});r.provider=p;if(p!==order[0])toast('Quota atteint : bascule automatique vers '+PROVIDERS[p].name,3500);return r}
+    catch(e){lastErr=e;if(!e.retry)throw e}
+  }
+  if(order.length>1)throw new Error('Tous vos fournisseurs ont échoué. '+lastErr.message);
+  throw lastErr;
 }
 function memoryContext(query){
   if(!S.settings.useMemory)return '';
@@ -357,7 +379,7 @@ const NAVOF=v=>({home:'home',chat:'chat',projects:'projects',project:'projects',
 function go(v,p=null){route={v,p};render()}
 function conv(){return S.conversations.find(c=>c.id===cur)}
 const proj=id=>S.projects.find(p=>p.id===id);
-function aiReady(){return !!apiKey()}
+function aiReady(){return Object.keys(PROVIDERS).some(keyOf)}
 
 /* ============ Vues ============ */
 const V={};
@@ -452,7 +474,7 @@ V.workflow=id=>{const w=S.workflows.find(x=>x.id===id);if(!w)return '<div class=
   '<h2>Historique</h2>'+(runs.length?runs.map(r=>'<div class="card"><div class="row"><span class="badge '+WSTAT[r.status]+'">'+esc(r.status)+'</span><span class="small">'+esc(fmtDT(r.created_at))+'</span>'+(r.status==='en cours'?'<button class="btn sm danger" data-act="cancelRun" data-id="'+r.id+'">Annuler</button>':'')+'</div>'+(r.log||[]).map(l=>'<div class="log"><b>'+esc(l.title)+'</b> — '+esc(l.status)+(l.err?'<div class="late">'+esc(l.err)+'</div>':'')+(l.out?'<div class="small">'+esc(l.out.slice(0,160))+'…</div>':'')+'</div>').join('')+(r.status==='terminé'&&r.result?'<div class="row end"><button class="btn sm" data-act="showRun" data-id="'+r.id+'">Voir le résultat</button></div>':'')+(r.error?'<div class="late">'+esc(r.error)+'</div>':'')+'</div>').join(''):'<div class="empty">Jamais exécutée.</div>');};
 
 V.integrations=()=>{
-  const g=S.settings.provider==='gemini'&&aiReady();
+  const g=!!(keyOf('gemini')||keyOf('groq'));
   const row=(ic,name,desc,badge,btn)=>'<div class="card"><div class="row"><span style="font-size:24px">'+ic+'</span><div class="grow"><div class="t">'+name+'</div><div class="sub">'+desc+'</div></div><span class="badge '+badge[0]+'">'+badge[1]+'</span></div>'+(btn||'')+'</div>';
   return '<p class="small">Chaque intégration affiche son état réel. Rien n\'est simulé.</p>'+
   row('🌐','Recherche web (Google, via Gemini)','Résultats sourcés dans le chat (bouton « Recherche web »). Gratuit dans les limites de votre clé Gemini.',g?['ok','Opérationnelle']:['warn','À configurer'],g?'<div class="row end"><button class="btn sm" data-act="testSearch">Tester</button></div>':'<div class="small">Requiert le fournisseur Gemini et une clé dans Paramètres.</div>')+
@@ -466,8 +488,8 @@ V.more=()=>[['files','📄','Fichiers','Importer, résumer, analyser'],['auto','
 
 V.settings=()=>{const s=S.settings,pv=prov();const recent=S.audit.slice(0,12);
   return '<div class="card"><h3>Profil</h3><form data-form="saveProfile"><label class="fld"><span>Prénom</span><input name="name" value="'+esc(s.name)+'"></label><label class="fld"><span>Thème</span><select name="theme">'+[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(o=>'<option value="'+o[0]+'" '+(s.theme===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select></label><button class="btn pri">Enregistrer</button></form></div>'+
-  '<div class="card"><h3>Intelligence artificielle</h3><form data-form="saveAI"><label class="fld"><span>Fournisseur</span><select name="provider" id="provSel">'+Object.entries(PROVIDERS).map(([k,v])=>'<option value="'+k+'" '+(s.provider===k?'selected':'')+'>'+v.name+'</option>').join('')+'</select></label><label class="fld"><span>Clé API (stockée uniquement sur cet appareil)</span><input name="key" type="password" placeholder="'+(apiKey()?'•••••••• clé enregistrée (laisser vide pour conserver)':'Collez votre clé ici')+'" autocomplete="off"></label><label class="fld"><span>Modèle</span><input name="model" value="'+esc(modelName())+'"></label><label class="fld"><span>Plafond d\'appels IA par jour</span><input name="cap" type="number" min="1" max="2000" value="'+s.dailyCap+'"></label><div class="row"><button class="btn pri">Enregistrer</button><button type="button" class="btn" data-act="testAI">Tester la connexion</button></div></form><p class="small">Obtenir une clé gratuite : <a href="'+pv.keyUrl+'" target="_blank" rel="noopener" id="keyLink">'+pv.keyUrl+'</a><br>Aujourd\'hui : '+(S.usage.date===todayStr()?S.usage.count:0)+' appel(s) IA. Vos messages sont envoyés au fournisseur choisi ; la clé n\'est jamais incluse dans les sauvegardes.</p></div>'+
-  '<div class="card"><h3>Confidentialité et sécurité</h3><div class="row"><label class="row"><input type="checkbox" id="useMem" '+(s.useMemory?'checked':'')+' style="width:22px;min-height:22px"> Utiliser ma mémoire dans les réponses</label></div><div class="row" style="margin-top:10px"><button class="btn" data-act="setPin">'+(s.pinHash?'Changer le code':'Définir un code de verrouillage')+'</button>'+(s.pinHash?'<button class="btn" data-act="rmPin">Retirer</button>':'')+'</div><p class="small">Le code protège l\'ouverture de l\'app mais ne chiffre pas les données : verrouillez aussi votre téléphone.</p></div>'+
+  '<div class="card"><h3>Intelligence artificielle</h3><form data-form="saveAI"><label class="fld"><span>Fournisseur</span><select name="provider" id="provSel">'+Object.entries(PROVIDERS).map(([k,v])=>'<option value="'+k+'" '+(s.provider===k?'selected':'')+'>'+v.name+'</option>').join('')+'</select></label><label class="fld"><span>Clé API (stockée uniquement sur cet appareil)</span><input name="key" type="password" placeholder="'+(apiKey()?'•••••••• clé enregistrée (laisser vide pour conserver)':'Collez votre clé ici')+'" autocomplete="off"></label><label class="fld"><span>Modèle</span><input name="model" value="'+esc(modelName())+'"></label><label class="fld"><span>Plafond d\'appels IA par jour</span><input name="cap" type="number" min="1" max="2000" value="'+s.dailyCap+'"></label><div class="row"><button class="btn pri">Enregistrer</button><button type="button" class="btn" data-act="testAI">Tester la connexion</button></div></form><p class="small">Obtenir une clé gratuite : <a href="'+pv.keyUrl+'" target="_blank" rel="noopener" id="keyLink">'+pv.keyUrl+'</a><br>Clés : '+Object.keys(PROVIDERS).map(k=>PROVIDERS[k].name+(keyOf(k)?' ✓':' ✗')).join(' · ')+'<br>Aujourd\'hui : '+(S.usage.date===todayStr()?S.usage.count:0)+' appel(s) IA. Vos messages sont envoyés au fournisseur choisi ; la clé n\'est jamais incluse dans les sauvegardes.</p></div>'+
+  '<div class="card"><h3>Confidentialité et sécurité</h3><div class="row"><label class="row"><input type="checkbox" id="useMem" '+(s.useMemory?'checked':'')+' style="width:22px;min-height:22px"> Utiliser ma mémoire dans les réponses</label></div><div class="row" style="margin-top:8px"><label class="row"><input type="checkbox" id="useFb" '+(s.fallback!==false?'checked':'')+' style="width:22px;min-height:22px"> Basculer automatiquement vers un autre fournisseur si le quota est atteint</label></div><div class="row" style="margin-top:10px"><button class="btn" data-act="setPin">'+(s.pinHash?'Changer le code':'Définir un code de verrouillage')+'</button>'+(s.pinHash?'<button class="btn" data-act="rmPin">Retirer</button>':'')+'</div><p class="small">Le code protège l\'ouverture de l\'app mais ne chiffre pas les données : verrouillez aussi votre téléphone.</p></div>'+
   '<div class="card"><h3>Données</h3><div class="row"><button class="btn" data-act="exportData">Exporter (JSON)</button><button class="btn" data-act="importData">Importer</button><button class="btn danger" data-act="wipe">Tout effacer</button></div></div>'+
   '<div class="card"><h3>Journal d\'activité</h3>'+(recent.length?recent.map(a=>'<div class="small">'+esc(fmtDT(a.at))+' · '+esc(a.action)+' · '+esc(a.type)+'</div>').join(''):'<div class="small">Aucune activité.</div>')+'</div><p class="small" style="text-align:center">NEXUS AI V1 — données locales sur cet appareil</p>';
 };
@@ -503,7 +525,7 @@ const A={
   delConv:async d=>{if(!await confirmDlg('Supprimer cette conversation ?',{danger:true,ok:'Supprimer'}))return;S.conversations=S.conversations.filter(c=>c.id!==d.id);delete S.messages[d.id];if(cur===d.id)cur=null;audit('delete','conversation',d.id);save();$('#convSheet')&&$('#convSheet').remove();render()},
   renameConv:()=>{const c=conv();if(!c)return toast('Envoyez d\'abord un message');formSheet({title:'Conversation',fields:[{name:'title',label:'Titre',value:c.title,required:true},{name:'projectId',label:'Projet associé',type:'select',value:c.projectId||'',options:[['','Aucun'],...S.projects.map(p=>[p.id,p.name])]}]},v=>{c.title=v.title.trim();c.projectId=v.projectId||null;save();render()})},
   suggest:d=>sendChat(d.q),
-  toggleWeb:()=>{if(!webOn&&!(S.settings.provider==='gemini'))return toast('La recherche web nécessite Google Gemini (Paramètres).');webOn=!webOn;render()},
+  toggleWeb:()=>{if(!webOn&&!(keyOf('gemini')||keyOf('groq')))return toast('La recherche web nécessite une clé Gemini ou Groq (Paramètres).');webOn=!webOn;render()},
   toggleMem:()=>{S.settings.useMemory=!S.settings.useMemory;save();render()},
   attach:()=>{const o=sheet('<h3>Joindre un fichier</h3><button class="btn pri" data-act="attachNew" style="width:100%;margin-bottom:10px">＋ Importer un nouveau fichier</button>'+(S.files.length?S.files.map(f=>'<div class="item" data-act="attachPick" data-id="'+f.id+'"><div class="grow"><div class="t">'+esc(f.name)+'</div><div class="sub">'+fmtSize(f.size)+'</div></div></div>').join(''):'')+'<div class="row end"><button class="btn ghost" data-close>Fermer</button></div>');o.id='attSheet'},
   attachPick:d=>{if(!pending.includes(d.id))pending.push(d.id);$('#attSheet')&&$('#attSheet').remove();renderPend()},
@@ -598,6 +620,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   if(e.target.id==='provSel'){const p=e.target.value;const f=e.target.form;f.model.value=S.settings.models[p]||PROVIDERS[p].model;$('#keyLink').href=$('#keyLink').textContent=PROVIDERS[p].keyUrl;f.key.placeholder=S.settings.keys[p]?'•••••••• clé enregistrée':'Collez votre clé ici'}
   else if(e.target.id==='useMem'){S.settings.useMemory=e.target.checked;save()}
+  else if(e.target.id==='useFb'){S.settings.fallback=e.target.checked;save()}
 });
 const fileIn=$('#fileIn');
 fileIn.addEventListener('change',async()=>{
